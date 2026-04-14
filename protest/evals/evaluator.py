@@ -32,8 +32,6 @@ The framework reads fields by type:
 from __future__ import annotations
 
 import dataclasses
-import functools
-import inspect
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -50,6 +48,8 @@ from protest.evals.hashing import _canonical
 from protest.evals.types import EvalScore
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from protest.evals.types import Judge
 
 InputT = TypeVar("InputT")
@@ -217,37 +217,50 @@ def extract_scores_from_result(result: Any, evaluator_name: str) -> list[Any]:
     raise TypeError(f"Evaluator must return bool or dataclass, got {type_name}")
 
 
-def evaluator(fn: Any) -> Any:
-    """Decorator that turns a function into a protest evaluator.
+class Evaluator:
+    """A configured evaluator — callable with identity for hashing.
 
-    The decorated function can be called two ways:
+    Created by the ``@evaluator`` decorator. Supports two calling modes:
 
-    1. ``evaluator_fn(ctx)`` — evaluate directly
-    2. ``evaluator_fn(keyword=value, ...)`` — returns a bound evaluator (partial)
-
-    This is just ``functools.partial`` with nicer ergonomics: when the first
-    positional argument is an ``EvalContext``, the function evaluates. Otherwise,
-    all arguments are bound and the result is a new callable expecting only ``ctx``.
+    1. ``ev(ctx)`` — evaluate directly (first arg is EvalContext)
+    2. ``ev(keyword=value, ...)`` — bind params, return a new Evaluator
     """
-    sig = inspect.signature(fn)
-    params = list(sig.parameters.values())
-    has_extra_params = len(params) > 1
 
-    @functools.wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        # Direct call: first positional arg is an EvalContext
+    __slots__ = ("_fn", "_kwargs", "_name", "_qualname")
+
+    def __init__(
+        self, fn: Callable[..., Any], kwargs: dict[str, Any] | None = None
+    ) -> None:
+        self._fn = fn
+        self._kwargs = kwargs or {}
+        self._name = fn.__name__
+        self._qualname = fn.__qualname__
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if args and isinstance(args[0], EvalContext):
-            return fn(*args, **kwargs)
-        # Bind params → return partial
-        if has_extra_params and kwargs:
-            bound = functools.partial(fn, **kwargs)
-            # Preserve async detection on the partial
-            bound.__name__ = fn.__name__  # type: ignore[attr-defined]
-            bound.__qualname__ = fn.__qualname__  # type: ignore[attr-defined]
-            return bound
-        # No args at all — if no extra params, this IS the evaluator
-        if not has_extra_params and not args and not kwargs:
-            return fn
-        return fn(*args, **kwargs)
+            merged = {**self._kwargs, **kwargs}
+            return self._fn(*args, **merged)
+        if kwargs:
+            return Evaluator(self._fn, {**self._kwargs, **kwargs})
+        return self
 
-    return wrapper
+    def evaluator_identity(self) -> dict[str, Any]:
+        identity: dict[str, Any] = {"fn": self._qualname}
+        if self._kwargs:
+            identity["kwargs"] = self._kwargs
+        return identity
+
+    def __repr__(self) -> str:
+        if self._kwargs:
+            kw = ", ".join(f"{k}={v!r}" for k, v in self._kwargs.items())
+            return f"Evaluator({self._name}({kw}))"
+        return f"Evaluator({self._name})"
+
+
+def evaluator(fn: Callable[..., Any]) -> Evaluator:
+    """Turn a function into a ProTest evaluator."""
+    return Evaluator(fn)

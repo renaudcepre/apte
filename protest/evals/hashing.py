@@ -15,13 +15,20 @@ import dataclasses
 import functools
 import hashlib
 import json
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 HASH_LENGTH = 12
 
 
 class CanonicalError(TypeError):
     """Raised when an object cannot be converted to a canonical form."""
+
+
+@runtime_checkable
+class HasEvaluatorIdentity(Protocol):
+    """Protocol for objects that provide explicit hashing identity."""
+
+    def evaluator_identity(self) -> dict[str, Any]: ...
 
 
 def compute_case_hash(inputs: Any, expected_output: Any) -> str:
@@ -56,10 +63,13 @@ def _canonical(obj: Any) -> Any:  # noqa: PLR0911
     if isinstance(obj, (list, tuple)):
         return [_canonical(item) for item in obj]
     if isinstance(obj, dict):
-        return {str(k): _canonical(v) for k, v in sorted(obj.items())}
+        return {
+            str(k): _canonical(v)
+            for k, v in sorted(obj.items(), key=lambda item: str(item[0]))
+        }
 
     # --- explicit identity (user-controlled) ---
-    if hasattr(obj, "evaluator_identity"):
+    if isinstance(obj, HasEvaluatorIdentity):
         return _canonical(obj.evaluator_identity())
 
     # --- introspection fallback ---

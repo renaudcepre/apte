@@ -3,6 +3,7 @@
 from protest.evals.evaluator import (
     EvalCase,
     EvalContext,
+    Evaluator,
     Metric,
     Reason,
     ShortCircuit,
@@ -27,6 +28,7 @@ __all__ = [
     "EvalContext",
     "EvalScore",
     "EvalSuiteReport",
+    "Evaluator",
     "Judge",
     "JudgeInfo",
     "JudgeResponse",

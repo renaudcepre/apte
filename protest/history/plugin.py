@@ -71,7 +71,7 @@ class HistoryPlugin(PluginBase):
                 if isinstance(suite, EvalSuite) and suite.judge is not None:
                     self._eval_judge_info[suite.name] = {
                         "name": suite.judge.name,
-                        "provider": getattr(suite.judge, "provider", None),
+                        "provider": suite.judge.provider,
                     }
             elif not self._default_suite_name or self._default_suite_name == "tests":
                 self._default_suite_name = suite.name

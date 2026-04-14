@@ -16,6 +16,7 @@ from protest.entities.events import EvalPayload, EvalScoreEntry
 from protest.evals.evaluator import (
     EvalCase,
     EvalContext,
+    Evaluator,
     ShortCircuit,
     extract_scores_from_result,
 )
@@ -181,7 +182,7 @@ async def run_evaluators(
             scores.extend(await _run_short_circuit(ev.evaluators, ctx))
             continue
 
-        evaluator_name = getattr(ev, "__name__", type(ev).__name__)
+        evaluator_name = ev.name if isinstance(ev, Evaluator) else type(ev).__name__
         try:
             raw = ev(ctx)
             result = await raw if asyncio.iscoroutine(raw) else raw
@@ -199,7 +200,7 @@ async def _run_short_circuit(
     """Run evaluators in order, stop at first Verdict=False."""
     scores: list[EvalScore] = []
     for i, ev in enumerate(evaluators):
-        evaluator_name = getattr(ev, "__name__", type(ev).__name__)
+        evaluator_name = ev.name if isinstance(ev, Evaluator) else type(ev).__name__
         try:
             raw = ev(ctx)
             result = await raw if asyncio.iscoroutine(raw) else raw
@@ -210,8 +211,10 @@ async def _run_short_circuit(
         if any(s.is_verdict and not s.passed for s in extracted):
             # Mark remaining evaluators as skipped
             for skipped_ev in evaluators[i + 1 :]:
-                skipped_name = getattr(
-                    skipped_ev, "__name__", type(skipped_ev).__name__
+                skipped_name = (
+                    skipped_ev.name
+                    if isinstance(skipped_ev, Evaluator)
+                    else type(skipped_ev).__name__
                 )
                 scores.append(EvalScore(name=skipped_name, value=False, skipped=True))
             break
