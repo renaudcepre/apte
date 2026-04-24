@@ -28,6 +28,7 @@ from protest.core.suite import (
 )
 from protest.events.types import Event
 from protest.filters.keyword import KeywordFilterPlugin
+from protest.filters.kind import KindFilterPlugin
 from protest.filters.suite import SuiteFilterPlugin
 from protest.plugin import PluginBase, PluginContext
 from protest.tags.plugin import TagFilterPlugin
@@ -150,6 +151,7 @@ def collect_tests(  # noqa: PLR0913 - public API with many optional params
         TagFilterPlugin,
         SuiteFilterPlugin,
         KeywordFilterPlugin,
+        KindFilterPlugin,
     ]
     for plugin_class in filter_plugins:
         instance = plugin_class.activate(ctx)

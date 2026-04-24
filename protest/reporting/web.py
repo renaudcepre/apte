@@ -51,6 +51,22 @@ DEFAULT_PORT = 8765
 _broadcast_clients: set[Any] = set()
 
 
+_REPR_LIMIT = 2048
+
+
+def _safe_repr(value: Any) -> str | None:
+    """Render an arbitrary value as a JSON-safe string, capped at _REPR_LIMIT."""
+    if value is None:
+        return None
+    try:
+        text = str(value)
+    except Exception as exc:
+        text = f"<unstringifiable: {type(value).__name__}: {exc}>"
+    if len(text) > _REPR_LIMIT:
+        text = text[:_REPR_LIMIT] + f"... <truncated, {len(text)} chars>"
+    return text
+
+
 def _format_traceback(error: Exception) -> str:
     lines = traceback.format_exception(type(error), error, error.__traceback__)
     return "".join(lines)
@@ -309,9 +325,9 @@ class WebReporter(PluginBase):
             payload["evalPayload"] = {
                 "caseName": ep.case_name,
                 "passed": ep.passed,
-                "inputs": ep.inputs,
-                "output": ep.output,
-                "expected": ep.expected_output,
+                "inputs": _safe_repr(ep.inputs),
+                "output": _safe_repr(ep.output),
+                "expected": _safe_repr(ep.expected_output),
                 "scores": {
                     name: {
                         "value": entry.value,

@@ -5,14 +5,16 @@ Run all (tests + evals):
 
 Run only tests:
     protest run examples.yorkshire.session:session
-    (protest run filters to kind=test by default)
+    (protest run filters to kind=test)
 
 Run only evals:
     protest eval examples.yorkshire.session:session
 """
 
+from typing import Annotated
+
 from examples.yorkshire.app.chatbot import yorkshire_chatbot
-from examples.yorkshire.evals.dataset import dataset
+from examples.yorkshire.evals.dataset import suite_evaluators, yorkshire_cases
 from examples.yorkshire.tests.fixtures import (
     configure_kennel_logging,
     kennel,
@@ -26,8 +28,9 @@ from examples.yorkshire.tests.suites.puppies.suite import puppies_suite
 from examples.yorkshire.tests.suites.rate_limited import rate_limited_suite
 from examples.yorkshire.tests.suites.seniors.suite import seniors_suite
 from examples.yorkshire.tests.suites.showcase.suite import showcase_suite
-from protest import ProTestSession
-from protest.evals import ModelInfo
+from protest import From, ProTestSession
+from protest.evals import EvalCase, ModelInfo
+from protest.evals.suite import EvalSuite
 
 session = ProTestSession(concurrency=4, history=True)
 session.use(BarkPlugin)
@@ -35,7 +38,6 @@ session.bind(configure_kennel_logging, autouse=True)
 session.bind(kennel)
 session.bind(yorkshire)
 
-# Tests
 session.add_suite(puppies_suite)
 session.add_suite(adults_suite)
 session.add_suite(seniors_suite)
@@ -44,9 +46,13 @@ session.add_suite(showcase_suite)
 session.add_suite(rate_limited_suite)
 session.add_suite(custom_factory_suite)
 
-# Evals
-session.configure_evals(model=ModelInfo(name="yorkshire-chatbot-v1", provider="local"))
-session.register_dataset(
-    dataset,
-    task=yorkshire_chatbot,
+yorkshire_suite = EvalSuite(
+    "yorkshire_eval",
+    model=ModelInfo(name="yorkshire-chatbot-v1", provider="local"),
 )
+session.add_suite(yorkshire_suite)
+
+
+@yorkshire_suite.eval(evaluators=suite_evaluators)
+def yorkshire_eval(case: Annotated[EvalCase, From(yorkshire_cases)]) -> str:
+    return yorkshire_chatbot(case.inputs)

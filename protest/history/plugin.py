@@ -206,19 +206,34 @@ class HistoryPlugin(PluginBase):
 
 
 def _serialize_eval_case(case: EvalCaseResult) -> dict[str, Any]:
-    """Serialize an eval case result for JSONL storage."""
+    """Serialize an eval case result for JSONL storage.
+
+    Skipped scores are excluded: a ShortCircuit skip produces
+    `EvalScore(value=False, skipped=True)` — serializing it as an assertion
+    would look like a real failure in `history --compare` diffs.
+    """
     entry: dict[str, Any] = {
         "passed": case.passed,
         "is_error": case.is_error,
         "duration": round(case.duration, 3),
-        "scores": {s.name: s.value for s in case.scores if s.is_metric},
+        "scores": {
+            s.name: s.value for s in case.scores if s.is_metric and not s.skipped
+        },
         "case_hash": case.case_hash,
         "eval_hash": case.eval_hash,
     }
-    labels = {s.name: s.value for s in case.scores if isinstance(s.value, str)}
+    labels = {
+        s.name: s.value
+        for s in case.scores
+        if isinstance(s.value, str) and not s.skipped
+    }
     if labels:
         entry["labels"] = labels
-    assertions = {s.name: s.value for s in case.scores if isinstance(s.value, bool)}
+    assertions = {
+        s.name: s.value
+        for s in case.scores
+        if isinstance(s.value, bool) and not s.skipped
+    }
     if assertions:
         entry["assertions"] = assertions
     return entry
