@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import io
 import logging
 import sys
-from collections.abc import Callable
 from contextlib import suppress
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from logging import LogRecord
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
 
-from protest.compat import Self
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from protest.compat import Self
+    from protest.events.bus import EventBus
 
 _capture_buffer: ContextVar[io.StringIO | None] = ContextVar(
     "capture_buffer", default=None
@@ -19,7 +24,7 @@ _log_records: ContextVar[list[LogRecord] | None] = ContextVar(
 )
 
 _current_node_id: ContextVar[str | None] = ContextVar("current_node_id", default=None)
-_event_bus_ref: ContextVar[object | None] = ContextVar("event_bus_ref", default=None)
+_event_bus_ref: ContextVar[EventBus | None] = ContextVar("event_bus_ref", default=None)
 
 
 @dataclass(slots=True)
@@ -101,17 +106,17 @@ def get_session_teardown_output() -> str:
     return _session_teardown.buffer.getvalue() if _session_teardown.buffer else ""
 
 
-def set_event_bus(bus: object) -> Token[object | None]:
+def set_event_bus(bus: EventBus) -> Token[EventBus | None]:
     """Set event bus reference for console.print() access."""
     return _event_bus_ref.set(bus)
 
 
-def reset_event_bus(token: Token[object | None]) -> None:
+def reset_event_bus(token: Token[EventBus | None]) -> None:
     """Reset event bus reference."""
     _event_bus_ref.reset(token)
 
 
-def get_event_bus() -> object | None:
+def get_event_bus() -> EventBus | None:
     """Get current event bus (for console.print)."""
     return _event_bus_ref.get()
 

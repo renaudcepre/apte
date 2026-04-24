@@ -41,9 +41,13 @@ def print(msg: str, *, raw: bool = False) -> None:
         _fallback_print(msg, raw)
         return
 
-    # Call handlers directly (sync, bypasses async emit).
-    # This ensures messages appear immediately, not after the test.
-    for handler_entry in bus._handlers.get(Event.USER_PRINT, []):  # type: ignore[attr-defined]
+    # Intentional private access to `bus._handlers`: we need sync dispatch
+    # so messages appear immediately (not after the test). An earlier public
+    # `EventBus.emit_sync` was removed (commit e14ffd5) because its signal-
+    # handler use case was async-signal-unsafe, and we don't want to offer
+    # that API to users. Kept private here — the framework itself is the
+    # only caller, and console.print is never invoked from a signal handler.
+    for handler_entry in bus._handlers.get(Event.USER_PRINT, []):
         with contextlib.suppress(Exception):
             handler_entry.func((msg, raw))
 
