@@ -9,6 +9,7 @@ from protest.di.hints import get_type_hints_compat
 from protest.di.markers import Use
 from protest.di.validation import _extract_from_params
 from protest.entities import FixtureCallable, SuitePath, TestItem, TestRegistration
+from protest.evals.evaluator import EvalCase
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -176,11 +177,18 @@ class Collector:
                 sources[index].get_id(value) for index, value in enumerate(combination)
             ]
 
+            item_tags = tags.copy()
+            for value in combination:
+                if isinstance(value, EvalCase):
+                    case_tags = value.metadata.get("tags")
+                    if case_tags:
+                        item_tags.update(case_tags)
+
             items.append(
                 TestItem(
                     func=test_reg.func,
                     suite=suite,
-                    tags=tags.copy(),
+                    tags=item_tags,
                     case_kwargs=case_kwargs,
                     case_ids=case_ids,
                     skip=test_reg.skip,
