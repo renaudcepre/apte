@@ -62,6 +62,24 @@ CODES = ForEach([200, 201])
 def test_status(code: Annotated[int, From(CODES)]): ...
 ```
 
+### Native LLM Evals
+
+Score model outputs alongside your tests — same fixtures, same parallelism, same `protest` CLI. Cases get pass/fail + numeric metrics, persisted to JSONL for run-over-run comparison.
+
+```python
+@chatbot_suite.eval(evaluators=[contains_keywords(keywords=["paris"])])
+async def chatbot(case: Annotated[EvalCase, From(cases)]) -> str:
+    return await my_agent(case.inputs)
+```
+
+```bash
+protest eval evals.session:session
+protest history --runs        # recent runs
+protest history --compare     # current vs previous
+```
+
+See [Evals docs](https://renaudcepre.github.io/protest/evals/) for evaluators, judges, history tracking.
+
 ---
 
 ## Quick Start
@@ -120,6 +138,7 @@ protest run module:session --ctrf-output r.json  # CTRF report for CI/CD
 - **Plugin system** - Custom reporters, filters
 - **Last-failed mode** - Re-run only failed tests with `--lf`
 - **CTRF reports** - Standardized JSON for CI/CD integration
+- **Native LLM evals** - Scored cases, JSONL history, `protest eval` (see [evals docs](https://renaudcepre.github.io/protest/evals/))
 
 ## Why Not pytest?
 

@@ -106,7 +106,29 @@ cases = ForEach([
 | `expected` | `Any` | Expected output (passed to evaluators as `ctx.expected_output`) |
 | `name` | `str` | Case identifier (used in test IDs and history) |
 | `evaluators` | `list` | Per-case evaluators (added to suite-level ones) |
-| `metadata` | `dict` | Arbitrary metadata |
+| `metadata` | `dict` | Arbitrary metadata (special key: `"tags"` — see below) |
+
+### Why `EvalCase` and not a dict?
+
+The runtime reads case data via attribute access (`case.expected`, `case.metadata`, `case.evaluators`), not by string key. A plain dict would compile fine but blow up at runtime, and you'd lose the IDE refactor/Ctrl+Click affordances. Making `EvalCase` a typed dataclass surfaces typos at import time and keeps the contract one obvious place — same trade-off as `Annotated[T, Use(fn)]` over pytest's name-based fixture lookup.
+
+### Tags via `metadata={"tags": [...]}`
+
+Per-case tags piggyback on the `metadata` dict under the reserved key `"tags"`. They flow through the test collector and become first-class on the resulting `TestItem`, so `protest eval --tag slow` works out of the box.
+
+```python
+EvalCase(
+    inputs="Long doc to summarize…",
+    expected="…",
+    name="long_doc_case",
+    metadata={"tags": ["slow", "summarization"]},
+)
+```
+
+```bash
+protest eval evals.session:session --tag slow
+protest eval evals.session:session --no-tag slow
+```
 
 ## Evaluators
 
@@ -236,6 +258,25 @@ evaluators=[
 
 `ShortCircuit` is a group of ordered evaluators. The first `Verdict=False` stops the group. Evaluators outside the `ShortCircuit` always run.
 
+Execution order — `evaluators=[a, ShortCircuit([b, c]), d]`:
+
+```
+a            ← always runs
+├─ pass    → continue
+└─ fail    → continue (a is outside the group, doesn't gate b/c)
+
+[ShortCircuit group ──────────────────────────────────┐
+  b          ← always runs (first in group)           │
+  ├─ pass  → c                                        │
+  └─ fail  → c skipped (Verdict=False stops group)    │
+  c          ← runs only if b passed                  │
+└─────────────────────────────────────────────────────┘
+
+d            ← always runs (outside the group)
+```
+
+The list `evaluators=[…]` is sequential at the top level; a `ShortCircuit` is just a sub-group that may stop early. Use it to gate expensive evaluators (LLM judges) behind cheap ones (keyword/regex checks).
+
 ### Using Evaluators
 
 ```python
@@ -302,7 +343,11 @@ async def pipeline_eval(
 
 ## ModelInfo
 
-`ModelInfo` is a **label for history tracking** — it does not configure or route to any model. It records which model produced the results so you can compare runs.
+!!! warning "ModelInfo does NOT configure a model"
+
+    Despite the name, `ModelInfo` is a **passive label** for history tracking. It does not route requests, set a temperature, pick a provider, or otherwise touch any LLM. The actual model wiring happens inside *your* task function (or the agent / SDK it calls). `ModelInfo` exists solely so `protest history` can attribute results to a specific model and compare runs side-by-side.
+
+`ModelInfo` records which model produced the results so you can compare runs.
 
 ```python
 suite = EvalSuite("pipeline", model=ModelInfo(name="qwen-2.5"))
