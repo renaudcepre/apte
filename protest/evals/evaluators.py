@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json as json_module
 import re
+from collections.abc import Sized
 from dataclasses import dataclass
 from typing import Annotated, Any
 
@@ -86,11 +87,19 @@ def does_not_contain(
 
 @evaluator
 def not_empty(ctx: EvalContext[Any, Any]) -> bool:
-    """Check that the output is not empty or whitespace-only."""
+    """Check that the output is not empty.
+
+    - `None` -> False.
+    - `str`: False if empty or whitespace-only.
+    - Sized (list, dict, set, tuple, ...): False if `len() == 0`.
+    - Other (int, float, dataclass, custom objects): True.
+    """
     if ctx.output is None:
         return False
     if isinstance(ctx.output, str):
         return len(ctx.output.strip()) > 0
+    if isinstance(ctx.output, Sized):
+        return len(ctx.output) > 0
     return True
 
 

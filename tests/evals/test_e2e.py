@@ -769,6 +769,44 @@ class TestBuiltinEvaluators:
         assert not_empty(self._make_ctx("")) is False
         assert not_empty(self._make_ctx("   ")) is False
 
+    def test_not_empty_handles_sized_containers(self) -> None:
+        """Sized containers: empty -> False, non-empty -> True.
+
+        Earlier behavior fell through to `return True` for any non-string,
+        so `not_empty([])` reported True — misleading for tasks that return
+        lists/dicts (e.g. tool calls, retrieved chunks).
+        """
+        # Helper accepts Any at runtime; type hint is just a default.
+        ctx_empty_list: Any = self._make_ctx("")
+        ctx_empty_list.output = []
+        assert not_empty(ctx_empty_list) is False
+
+        ctx_nonempty_list: Any = self._make_ctx("")
+        ctx_nonempty_list.output = [1, 2]
+        assert not_empty(ctx_nonempty_list) is True
+
+        ctx_empty_dict: Any = self._make_ctx("")
+        ctx_empty_dict.output = {}
+        assert not_empty(ctx_empty_dict) is False
+
+        ctx_nonempty_dict: Any = self._make_ctx("")
+        ctx_nonempty_dict.output = {"a": 1}
+        assert not_empty(ctx_nonempty_dict) is True
+
+        ctx_empty_set: Any = self._make_ctx("")
+        ctx_empty_set.output = set()
+        assert not_empty(ctx_empty_set) is False
+
+    def test_not_empty_unsized_objects_still_pass(self) -> None:
+        """Non-Sized values (int, float, dataclass): always True (kept as-is)."""
+        ctx_int: Any = self._make_ctx("")
+        ctx_int.output = 42
+        assert not_empty(ctx_int) is True
+
+        ctx_zero: Any = self._make_ctx("")
+        ctx_zero.output = 0  # 0 is not None, not Sized — still passes.
+        assert not_empty(ctx_zero) is True
+
     def test_max_length(self) -> None:
         e = max_length(max_chars=5)
         result = e(self._make_ctx("hi"))
