@@ -90,11 +90,7 @@ def _write_case_file(case: EvalCaseResult, run_dir: Path) -> None:
 
 def _render_case(case: EvalCaseResult) -> str:
     status = "PASS ✓" if case.passed else "FAIL ✗"
-    duration = (
-        f"{case.duration * 1000:.0f}ms"
-        if case.duration < 1
-        else f"{case.duration:.2f}s"
-    )
+    duration = _format_case_duration(case.duration)
     lines: list[str] = [
         f"# {case.case_name} — {status} ({duration})",
         "",
@@ -111,6 +107,26 @@ def _render_case(case: EvalCaseResult) -> str:
         lines.append("")
 
     return "\n".join(lines)
+
+
+_ONE_MILLISECOND = 0.001
+_TEN_MILLISECONDS = 0.01
+_ONE_SECOND = 1.0
+
+
+def _format_case_duration(seconds: float) -> str:
+    """Format SUT duration with adaptive units.
+
+    Sub-ms tasks (deterministic stubs, fast classifiers) used to render as
+    `0ms` because the renderer rounded to the nearest millisecond.
+    """
+    if seconds < _ONE_MILLISECOND:
+        return f"{seconds * 1_000_000:.0f}µs"
+    if seconds < _TEN_MILLISECONDS:
+        return f"{seconds * 1000:.2f}ms"
+    if seconds < _ONE_SECOND:
+        return f"{seconds * 1000:.0f}ms"
+    return f"{seconds:.2f}s"
 
 
 def _format_score(score: EvalScore) -> str:

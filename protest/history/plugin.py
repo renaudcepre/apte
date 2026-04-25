@@ -101,7 +101,7 @@ class HistoryPlugin(PluginBase):
             self._test_suites[suite_name] = {}
         self._test_suites[suite_name][result.name] = {
             "passed": passed,
-            "duration": round(result.duration, 3),
+            "duration": round(result.duration, 5),
         }
 
     # -- Eval event handlers --------------------------------------------------
@@ -216,11 +216,16 @@ def _serialize_eval_case(case: EvalCaseResult) -> dict[str, Any]:
     Skipped scores are excluded: a ShortCircuit skip produces
     `EvalScore(value=False, skipped=True)` — serializing it as an assertion
     would look like a real failure in `history --compare` diffs.
+
+    `case.duration` here is `EvalPayload.task_duration` (SUT-only timing,
+    set by the eval wrapper), not the full TestResult duration shown by live
+    reporters. Persisted at 10 µs precision so sub-ms SUTs don't all hash
+    down to 0.0 across runs.
     """
     entry: dict[str, Any] = {
         "passed": case.passed,
         "is_error": case.is_error,
-        "duration": round(case.duration, 3),
+        "duration": round(case.duration, 5),
         "scores": {
             s.name: s.value for s in case.scores if s.is_metric and not s.skipped
         },
