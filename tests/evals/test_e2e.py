@@ -721,6 +721,39 @@ class TestBuiltinEvaluators:
         assert result.keyword_recall == 1.0
         assert result.all_keywords_present is True
 
+    def test_contains_keywords_default_requires_all(self) -> None:
+        """Default `min_recall=1.0` means strict: missing one → verdict False."""
+        e = contains_keywords(keywords=["hello", "world"])
+        result = e(self._make_ctx("Only hello here"))
+        assert result.keyword_recall == 0.5
+        assert result.all_keywords_present is False
+
+    def test_contains_keywords_threshold_continuity_at_zero(self) -> None:
+        """Regression: `min_recall=0.0` must always pass (no discontinuity at 0).
+
+        Earlier behavior: `min_recall=0.0` flipped to strict mode (all required),
+        while `min_recall=0.0001` was permissive — surprising at the boundary.
+        Now `recall >= min_recall` applies uniformly.
+        """
+        e = contains_keywords(keywords=["alpha", "beta"], min_recall=0.0)
+        result = e(self._make_ctx("nothing matches"))
+        assert result.keyword_recall == 0.0
+        assert result.all_keywords_present is True
+
+    def test_contains_keywords_threshold_at_exact_value(self) -> None:
+        """Verdict passes when recall equals the threshold exactly."""
+        e = contains_keywords(keywords=["alpha", "beta"], min_recall=0.5)
+        result = e(self._make_ctx("only alpha here"))
+        assert result.keyword_recall == 0.5
+        assert result.all_keywords_present is True
+
+    def test_contains_keywords_threshold_just_below(self) -> None:
+        """Verdict fails when recall is below the threshold."""
+        e = contains_keywords(keywords=["alpha", "beta", "gamma"], min_recall=0.5)
+        result = e(self._make_ctx("only alpha"))
+        assert abs(result.keyword_recall - 1 / 3) < 1e-9
+        assert result.all_keywords_present is False
+
     def test_contains_expected(self) -> None:
         e = contains_expected
         assert e(self._make_ctx("Hello World", "world")) is True

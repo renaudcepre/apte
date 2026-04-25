@@ -45,16 +45,22 @@ class WordOverlapResult:
 
 @evaluator
 def contains_keywords(
-    ctx: EvalContext[Any, str], keywords: list[str], min_recall: float = 0.0
+    ctx: EvalContext[Any, str], keywords: list[str], min_recall: float = 1.0
 ) -> ContainsKeywordsResult:
-    """Check that the output contains expected keywords (case-insensitive)."""
+    """Check that the output contains expected keywords (case-insensitive).
+
+    `min_recall` is the minimum fraction of keywords that must appear for
+    the verdict to pass. Default `1.0` requires all keywords to be present;
+    set to `0.5` for "at least half", `0.0` to ignore the verdict and only
+    track the metric.
+    """
     output_lower = ctx.output.lower()
     found = sum(1 for kw in keywords if kw.lower() in output_lower)
     total = len(keywords)
     recall = found / total if total else 1.0
     return ContainsKeywordsResult(
         keyword_recall=recall,
-        all_keywords_present=recall >= min_recall if min_recall > 0 else found == total,
+        all_keywords_present=recall >= min_recall,
     )
 
 

@@ -266,7 +266,7 @@ EvalCase(name="factual_accuracy_case", inputs="...", evaluators=[llm_judge(rubri
 
 | Evaluator | Params | Returns |
 |-----------|--------|---------|
-| `contains_keywords` | `keywords, min_recall=0.0` | `keyword_recall: float`, `all_keywords_present: bool` |
+| `contains_keywords` | `keywords, min_recall=1.0` | `keyword_recall: float`, `all_keywords_present: bool` |
 | `contains_expected` | `case_sensitive=False` | `bool` |
 | `does_not_contain` | `forbidden` | `no_forbidden_words: bool` |
 | `not_empty` | — | `bool` |
