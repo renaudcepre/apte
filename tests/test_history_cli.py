@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from protest.cli.history import handle_history_command
+from protest.history.storage import HISTORY_FILE, append_entry
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -110,3 +111,50 @@ class TestHelpShowsMutex:
         stdout = capsys.readouterr().out
         assert "[--runs | --show [N] | --compare]" in stdout
         assert "[--evals | --tests]" in stdout
+
+
+class TestRunsOrderRecentFirst:
+    """`--runs` lists most-recent run first (git log convention).
+
+    Storage returns entries oldest→newest; the CLI must reverse for display
+    so #1 maps to the newest run, matching `git stash list` / `git log`.
+    """
+
+    def _seed(self, tmp_path: Path, commits: list[tuple[str, str]]) -> None:
+        path = tmp_path / HISTORY_FILE
+        for ts, commit in commits:
+            append_entry(
+                path,
+                {
+                    "schema_version": 1,
+                    "run_id": commit,
+                    "timestamp": ts,
+                    "git": {"commit_short": commit},
+                    "suites": {},
+                },
+            )
+
+    def test_runs_displays_newest_first(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        # Seed in chronological order — storage preserves write order.
+        self._seed(
+            tmp_path,
+            [
+                ("2026-04-25T10:00:00", "old1234"),
+                ("2026-04-25T11:00:00", "mid5678"),
+                ("2026-04-25T12:00:00", "newabcd"),
+            ],
+        )
+        handle_history_command(["--runs", "--path", str(tmp_path)])
+        stdout = capsys.readouterr().out
+        # #1 is newest, #3 is oldest.
+        assert stdout.index("#1") < stdout.index("#2") < stdout.index("#3")
+        assert (
+            stdout.index("newabcd") < stdout.index("mid5678") < stdout.index("old1234")
+        )
+        # And #1 lines up with the newest commit, not the oldest.
+        newest_line = next(line for line in stdout.splitlines() if "#1" in line)
+        assert "newabcd" in newest_line

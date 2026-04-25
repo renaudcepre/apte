@@ -115,11 +115,13 @@ class _Output:
         print()
 
     def runs(self, entries: list[dict[str, Any]]) -> None:
-        for i, e in enumerate(entries):
+        # Display most-recent first (git log convention). `entries` arrives
+        # sorted oldest→newest from storage, so we reverse for display.
+        for i, e in enumerate(reversed(entries)):
             p, t, r = _entry_stats(e)
             git = (e.get("git") or {}).get("commit_short", "?")
             ts = e.get("timestamp", "?")[:16]
-            print(f"\n  #{len(entries) - i:<3} {ts}  {p}/{t} ({r * 100:.0f}%)  {git}")
+            print(f"\n  #{i + 1:<3} {ts}  {p}/{t} ({r * 100:.0f}%)  {git}")
             for sn, sd in e.get("suites", {}).items():
                 if not isinstance(sd, dict):
                     continue
@@ -212,13 +214,14 @@ class _RichOutput(_Output):
 
     def runs(self, entries: list[dict[str, Any]]) -> None:
         self.console.print()
-        for i, e in enumerate(entries):
+        # Display most-recent first (git log convention).
+        for i, e in enumerate(reversed(entries)):
             p, t, r = _entry_stats(e)
             git = (e.get("git") or {}).get("commit_short", "?")
             ts = e.get("timestamp", "?")[:16]
             rate_color = "green" if r >= 0.8 else "yellow" if r >= 0.5 else "red"
             self.console.print(
-                f"  [dim]#{len(entries) - i:<3}[/] {ts}  "
+                f"  [dim]#{i + 1:<3}[/] {ts}  "
                 f"[{rate_color}]{p}/{t} ({r * 100:.0f}%)[/]  [dim]{git}[/]"
             )
             for sn, sd in e.get("suites", {}).items():
