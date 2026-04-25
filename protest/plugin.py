@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Awaitable
 
+    from protest.compat import Self
     from protest.core.session import ProTestSession
     from protest.entities import (
         FixtureInfo,

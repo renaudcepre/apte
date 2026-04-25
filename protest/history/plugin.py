@@ -125,8 +125,9 @@ class HistoryPlugin(PluginBase):
         for suite_name, cases in self._test_suites.items():
             total = len(cases)
             passed = sum(1 for c in cases.values() if c["passed"])
+            kind = self._suite_kinds.get(suite_name)
             suites_data[suite_name] = {
-                "kind": str(self._suite_kinds.get(suite_name, "test")),
+                "kind": kind.value if kind is not None else "test",
                 "total_cases": total,
                 "passed": passed,
                 "failed": total - passed,
