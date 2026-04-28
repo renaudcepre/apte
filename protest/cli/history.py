@@ -364,7 +364,11 @@ class _RichOutput(_Output):
 
         self.console.print()
         self.console.print(
-            Panel(lines, title="[bold]Run Detail[/]", border_style="cyan")
+            Panel(
+                lines,
+                title="[bold]Run Detail[/]  [dim]([green]+[/] pass · [red]-[/] fail)[/]",
+                border_style="cyan",
+            )
         )
 
     def compare(self, current: dict[str, Any], previous: dict[str, Any]) -> None:

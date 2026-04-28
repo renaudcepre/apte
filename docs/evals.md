@@ -119,7 +119,8 @@ cases = ForEach([
 | `expected` | `Any` | Expected output (passed to evaluators as `ctx.expected_output`) |
 | `name` | `str` | Case identifier (used in test IDs and history) |
 | `evaluators` | `list` | Per-case evaluators (added to suite-level ones) |
-| `metadata` | `dict` | Arbitrary metadata (special key: `"tags"` — see below) |
+| `tags` | `list[str]` | First-class tags — flow to `protest eval --tag …` (see below) |
+| `metadata` | `dict` | Arbitrary metadata, opaque to the framework |
 
 ### Why `EvalCase` and not a dict?
 
@@ -663,7 +664,11 @@ protest history --evals --runs
 protest history --evals --show
 
 # Compare last two runs (fixed/regressed/new)
-protest history --evals --compare
+# Requires --model NAME if your history mixes multiple model labels
+# (e.g. one suite per rules version) — comparing across labels is rejected
+# to avoid phantom regressions where a case "fails" only because the two
+# runs being diffed used different models.
+protest history --evals --compare --model rules_v1
 ```
 
 ### Integrity Hashes
