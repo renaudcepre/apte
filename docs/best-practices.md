@@ -61,10 +61,10 @@ session.add_suite(integration_suite)
 # DON'T DO THIS - 500 lines of mixed fixtures/suites/tests
 session = ProTestSession()
 
-@fixture()
+@fixture
 def db(): ...
 
-@fixture()
+@fixture
 def cache(): ...
 
 session.bind(db)
@@ -91,7 +91,8 @@ import tests.test_users   # noqa: F401, E402
 import tests.test_orders   # noqa: F401, E402
 ```
 
-The imports are unused — they exist only to trigger `@suite.test()` registration at import time. This requires `# noqa` to silence linters and makes dependencies invisible. See the [Project Organization guide](guides/project-organization.md) for the correct pattern.
+The imports are unused — they exist only to trigger `@suite.test()` registration at import time. This requires `# noqa` to silence linters and makes dependencies invisible. See
+the [Project Organization guide](guides/project-organization.md) for the correct pattern.
 
 ## Suite Design
 
@@ -160,11 +161,11 @@ di_suite = ProTestSuite(
 
 ### Scope Determines Placement
 
-| Scope | Where to Define | Use Case |
-|-------|-----------------|----------|
-| Session | `session.py` or `fixtures.py` | Database, expensive resources |
-| Suite | Suite file | Suite-specific setup |
-| Test | Near test, `@fixture()` | Test isolation, cheap resources |
+| Scope   | Where to Define               | Use Case                        |
+|---------|-------------------------------|---------------------------------|
+| Session | `session.py` or `fixtures.py` | Database, expensive resources   |
+| Suite   | Suite file                    | Suite-specific setup            |
+| Test    | Near test, `@fixture`         | Test isolation, cheap resources |
 
 ### Session Fixtures: Expensive Resources
 
@@ -189,7 +190,7 @@ from protest import ProTestSuite, fixture
 
 api_suite = ProTestSuite("API")
 
-@fixture()
+@fixture
 async def authenticated_client(
     db: Annotated[Database, Use(database)]
 ) -> AsyncGenerator[APIClient, None]:
@@ -204,8 +205,8 @@ api_suite.bind(authenticated_client)
 ### Test Fixtures: Fresh Per Test
 
 ```python
-# Use @fixture() (not scoped) for per-test isolation
-@fixture()
+# Use @fixture (not scoped) for per-test isolation
+@fixture
 def request_payload() -> dict:
     return {"name": "test", "value": 42}
 ```
@@ -231,6 +232,7 @@ suite.bind(user)
 ```
 
 Usage:
+
 ```python
 @suite.test()
 async def test_user_permissions(
@@ -284,13 +286,13 @@ ProTestSuite("Misc")            # Bad
 
 ```python
 # Name after what they provide
-@fixture()
+@fixture
 def database(): ...      # Provides a database
 
 @factory()
 def user(): ...          # Provides a user (becomes user_factory in tests)
 
-@fixture()
+@fixture
 def api_client(): ...    # Provides an API client
 ```
 
@@ -435,12 +437,12 @@ def convert_video(input_path: str, output_path: str) -> ConversionResult:
 
 ```python
 # BAD: Should be test-scoped but bound to session
-@fixture()
+@fixture
 def request_id(): ...
 session.bind(request_id)  # Fresh value needed per test!
 
 # GOOD: Test-scoped (not bound)
-@fixture()
+@fixture
 def request_id() -> str:
     return str(uuid4())
 ```

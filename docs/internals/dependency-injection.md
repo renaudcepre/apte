@@ -30,11 +30,11 @@ ProTestSession
 
 ### Binding → Scope Mapping
 
-| Binding              | Scope   | Internal `scope_path`                    |
-|----------------------|---------|------------------------------------------|
-| `session.bind(fn)`   | Session | `None`                                   |
-| `suite.bind(fn)`     | Suite   | `suite.full_path` (e.g., `"API::Users"`) |
-| No binding           | Test    | `"<test_scope>"`                         |
+| Binding            | Scope   | Internal `scope_path`                    |
+|--------------------|---------|------------------------------------------|
+| `session.bind(fn)` | Session | `None`                                   |
+| `suite.bind(fn)`   | Suite   | `suite.full_path` (e.g., `"API::Users"`) |
+| No binding         | Test    | `"<test_scope>"`                         |
 
 ### Nested Suite Paths
 
@@ -62,12 +62,12 @@ A fixture can only depend on fixtures with **equal or wider** scope:
 Violating this raises `ScopeMismatchError`:
 
 ```python
-@fixture()  # Test scope (not bound)
+@fixture  # Test scope (not bound)
 def per_test():
     return "fresh"
 
 
-@fixture()
+@fixture
 def shared(x: Annotated[str, Use(per_test)]):
     pass
 
@@ -99,11 +99,11 @@ resolve(fixture_func)
 
 ### Three Cache Levels
 
-| Scope   | Where Cached                            | Lifetime         |
-|---------|-----------------------------------------|------------------|
+| Scope   | Where Cached                                    | Lifetime         |
+|---------|-------------------------------------------------|------------------|
 | Session | `FixtureContainer._registry[func].cached_value` | Entire session   |
 | Suite   | `FixtureContainer._path_caches[path][func]`     | While suite runs |
-| Test    | `TestExecutionContext._cache[func]`     | Single test      |
+| Test    | `TestExecutionContext._cache[func]`             | Single test      |
 
 Resolution is thread-safe. Concurrent tests requesting the same session fixture will
 wait for the first resolution to complete, then share the cached value.
@@ -113,7 +113,7 @@ wait for the first resolution to complete, then share the cached value.
 Generator fixtures use `yield` to separate setup from teardown:
 
 ```python
-@fixture()
+@fixture
 async def database():
     db = await connect()  # Setup
     yield db  # Value used by tests

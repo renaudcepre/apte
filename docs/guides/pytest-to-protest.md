@@ -4,13 +4,13 @@ This guide helps you migrate existing pytest test suites to ProTest. It covers t
 
 ## Philosophy Shift
 
-| pytest | ProTest |
-|--------|---------|
-| Convention-based (discover `test_*.py`) | Explicit structure (Suites, Sessions) |
-| Global fixtures via conftest.py | Explicit binding with `suite.bind()` |
-| Implicit dependency injection | Explicit DI with `Annotated[T, Use(fixture)]` |
-| Parametrize with `@pytest.mark.parametrize` | Parametrize with `ForEach` + `From` |
-| Scope via `@pytest.fixture(scope=...)` | Scope via binding: `session.bind()` / `suite.bind()` |
+| pytest                                      | ProTest                                              |
+|---------------------------------------------|------------------------------------------------------|
+| Convention-based (discover `test_*.py`)     | Explicit structure (Suites, Sessions)                |
+| Global fixtures via conftest.py             | Explicit binding with `suite.bind()`                 |
+| Implicit dependency injection               | Explicit DI with `Annotated[T, Use(fixture)]`        |
+| Parametrize with `@pytest.mark.parametrize` | Parametrize with `ForEach` + `From`                  |
+| Scope via `@pytest.fixture(scope=...)`      | Scope via binding: `session.bind()` / `suite.bind()` |
 
 ## Quick Reference
 
@@ -58,11 +58,11 @@ def test_user_in_db(user, db):
 from protest import fixture, Use
 from typing import Annotated
 
-@fixture()
+@fixture
 def user():
     return User(name="test")
 
-@fixture()
+@fixture
 def db():
     conn = connect()
     yield conn  # teardown after yield
@@ -191,15 +191,15 @@ from protest import fixture, ProTestSession, ProTestSuite
 session = ProTestSession()
 suite = ProTestSuite("MyTests")
 
-@fixture()
+@fixture
 def expensive_resource():
     return load_heavy_data()
 
-@fixture()
+@fixture
 def per_suite_db():
     return create_db()
 
-@fixture()  # default: TEST scope (no binding needed)
+@fixture  # default: TEST scope (no binding needed)
 def per_test_data():
     return fresh_data()
 
@@ -278,7 +278,7 @@ def test_todo():
     pass
 
 # Runtime skip condition with fixtures
-@fixture()
+@fixture
 def has_redis():
     return shutil.which("redis-server") is not None
 
@@ -364,7 +364,7 @@ async def test_async_operation():
     assert result
 
 # Async fixtures work naturally
-@fixture()
+@fixture
 async def async_client():
     async with aiohttp.ClientSession() as session:
         yield session
@@ -475,7 +475,7 @@ protest run myapp.tests.session:session --lf
 ## Migration Checklist
 
 1. **Create a session file** with `ProTestSession()`
-2. **Convert fixtures to ProTest syntax** (`@fixture()`, `@factory()`)
+2. **Convert fixtures to ProTest syntax** (`@fixture`, `@factory()`)
 3. **Create suites** to group related tests
 4. **Bind fixtures** to suites with appropriate scopes
 5. **Convert test functions** with explicit `Annotated[T, Use(fixture)]`

@@ -29,9 +29,10 @@ from typing import Annotated
 user_suite = ProTestSuite("User")
 
 
-@fixture()
+@fixture
 def user():
     return User("alice")
+
 
 user_suite.bind(user)  # SUITE scope
 
@@ -95,15 +96,21 @@ If fixtures could use `From()`, you'd get hidden cartesian products:
 ```python
 # Hypothetical - NOT SUPPORTED (decorator syntax doesn't exist either)
 # If this were possible:
-@fixture()
+@fixture
 def db(engine: Annotated[str, From(ENGINES)]):  # 3 engines
     ...
+
+
 session.bind(db)
 
-@fixture()
+
+@fixture
 def user(role: Annotated[str, From(ROLES)], db: ...):  # 2 roles
     ...
+
+
 session.bind(user)
+
 
 @session.test()
 def test_perms(method: Annotated[str, From(METHODS)], user: ...):  # 4 methods
@@ -150,6 +157,7 @@ async def test_ffmpeg_conversion() -> None:
 ```
 
 The `Shell` helper:
+
 - Runs subprocesses with isolated pipes (no fd sharing issues)
 - Automatically prints output for ProTest to capture
 - Works safely with concurrent tests (`-n 4`)

@@ -36,7 +36,7 @@ Tests declare their dependencies using type annotations:
 from typing import Annotated
 from protest import Use, fixture
 
-@fixture()
+@fixture
 def database():
     return Database()
 
@@ -175,7 +175,7 @@ ProTest evaluates skip conditions **after** fixture resolution, so your callable
 from typing import Annotated
 from protest import Use, fixture
 
-@fixture()
+@fixture
 def environment():
     return {"is_ci": os.getenv("CI") == "true"}
 
@@ -191,6 +191,7 @@ def test_local_only(env: Annotated[dict, Use(environment)]):
 ```
 
 **How it works:**
+
 1. Fixtures are resolved for the test
 2. ProTest introspects the skip callable's signature
 3. Matching fixtures are passed as kwargs to the callable
@@ -299,14 +300,14 @@ async def test_resilient():
 
 When combining options:
 
-| Combination | Behavior |
-|-------------|----------|
-| `skip + xfail` | Skip takes priority (test not executed) |
-| `skip + retry` | Skip takes priority |
+| Combination              | Behavior                                      |
+|--------------------------|-----------------------------------------------|
+| `skip + xfail`           | Skip takes priority (test not executed)       |
+| `skip + retry`           | Skip takes priority                           |
 | `skip(callable) + xfail` | Skip evaluated first; if skips, xfail ignored |
-| `skip(callable) + retry` | Skip evaluated first; if skips, no retry |
-| `xfail + retry` | Retry first, then xfail/xpass evaluation |
-| `timeout + retry` | Timeout triggers retry |
+| `skip(callable) + retry` | Skip evaluated first; if skips, no retry      |
+| `xfail + retry`          | Retry first, then xfail/xpass evaluation      |
+| `timeout + retry`        | Timeout triggers retry                        |
 
 ## Output Capture
 
