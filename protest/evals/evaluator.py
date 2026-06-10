@@ -13,7 +13,7 @@ Plain callables are not accepted in ``evaluators=[...]``; use ``@evaluator``::
     @evaluator
     def contains_keywords(ctx: EvalContext, keywords: list[str]) -> ContainsKeywordsResult:
         found = sum(1 for k in keywords if k.lower() in ctx.output.lower())
-        return ContainsKeywordsResult(keyword_recall=found / len(keywords), ...)
+        return ContainsKeywordsResult(recall=found / len(keywords), ...)
 
     # Bind params → returns a fresh Evaluator with kwargs frozen in.
     evaluators=[contains_keywords(keywords=["paris", "france"])]
@@ -240,12 +240,64 @@ class Reason:
     """Annotate a str field as a reason displayed on failure."""
 
 
+def _validate_return_annotation(fn: Callable[..., Any]) -> None:
+    """Reject evaluator functions whose return annotation isn't bool or a dataclass.
+
+    The return annotation is the score contract: it determines the score
+    names recorded in history and the keys of skipped placeholders
+    (`Evaluator.score_names()`). An unannotated function — or one annotated
+    `-> X | None` / `-> Any` — would make the static derivation diverge
+    from what the run actually emits, silently reintroducing unstable
+    score keys. Failing at decoration time keeps the contract checkable.
+    """
+    try:
+        hints = get_type_hints(fn)
+    except NameError as exc:
+        raise TypeError(
+            f"@evaluator '{fn.__name__}': return annotation cannot be resolved "
+            f"at runtime ({exc}). Evaluator return types must resolve from "
+            f"module scope — import them at runtime (not only under "
+            f"TYPE_CHECKING) and define them at module level (a dataclass "
+            f"defined inside a function cannot be resolved). The annotation "
+            f"drives score names in history and skipped placeholders."
+        ) from exc
+    ret = hints.get("return")
+    base = get_origin(ret) or ret
+    if ret is bool or (isinstance(base, type) and dataclasses.is_dataclass(base)):
+        return
+    raise TypeError(
+        f"@evaluator '{fn.__name__}' must declare a return annotation of bool "
+        f"or a dataclass, got {ret!r}. The annotation is the score contract: "
+        f"it determines score names for history and skipped placeholders, so "
+        f"it cannot be missing, optional, or a union."
+    )
+
+
+def _annotated_score_field_names(cls: type) -> list[str]:
+    """Names of the Metric/Verdict/Reason-annotated fields of a dataclass."""
+    names = []
+    hints = get_type_hints(cls, include_extras=True)
+    for f in dataclasses.fields(cls):
+        ann = hints.get(f.name)
+        if ann is None or get_origin(ann) is not Annotated:
+            continue
+        for meta in get_args(ann)[1:]:
+            if isinstance(meta, type) and issubclass(meta, (Metric, Verdict, Reason)):
+                names.append(f.name)
+                break
+    return names
+
+
 def extract_scores_from_result(result: Any, evaluator_name: str) -> list[Any]:
     """Extract EvalScore instances from an evaluator result.
 
     For bool returns: a single verdict named after the evaluator.
     For dataclass returns: only fields annotated with Metric/Verdict/Reason
-    are extracted. Unannotated fields are ignored (free metadata).
+    are extracted, each namespaced as ``<evaluator_name>.<field>`` so two
+    evaluators on the same case can both declare plain ``ok`` / ``detail``
+    fields. Namespacing is unconditional: a score's full name depends only
+    on its own evaluator, never on which other evaluators are wired in.
+    Unannotated fields are ignored (free metadata).
 
     Raises:
         TypeError: If result is not bool or dataclass.
@@ -254,19 +306,10 @@ def extract_scores_from_result(result: Any, evaluator_name: str) -> list[Any]:
         return [EvalScore(name=evaluator_name, value=result)]
 
     if dataclasses.is_dataclass(result) and not isinstance(result, type):
-        scores = []
-        hints = get_type_hints(type(result), include_extras=True)
-        for f in dataclasses.fields(result):
-            ann = hints.get(f.name)
-            if ann is None or get_origin(ann) is not Annotated:
-                continue
-            for meta in get_args(ann)[1:]:
-                if isinstance(meta, type) and issubclass(
-                    meta, (Metric, Verdict, Reason)
-                ):
-                    scores.append(EvalScore(name=f.name, value=getattr(result, f.name)))
-                    break
-        return scores
+        return [
+            EvalScore(name=f"{evaluator_name}.{name}", value=getattr(result, name))
+            for name in _annotated_score_field_names(type(result))
+        ]
 
     type_name = type(result).__name__
     raise TypeError(f"Evaluator must return bool or dataclass, got {type_name}")
@@ -299,6 +342,23 @@ class Evaluator:
     def name(self) -> str:
         return self._name
 
+    def score_names(self) -> list[str]:
+        """Score names this evaluator emits, derived from its return annotation.
+
+        Mirrors `extract_scores_from_result` without running the evaluator:
+        a dataclass return annotation yields the namespaced
+        ``<name>.<field>`` names; bool yields the bare evaluator name.
+        Used to build skipped placeholders with the same keys as a real
+        run, so score keys stay stable whether or not a ShortCircuit fired.
+        The annotation is guaranteed resolvable and bool-or-dataclass by
+        `_validate_return_annotation` at decoration time.
+        """
+        ret = get_type_hints(self._fn).get("return")
+        base = get_origin(ret) or ret
+        if isinstance(base, type) and dataclasses.is_dataclass(base):
+            return [f"{self._name}.{n}" for n in _annotated_score_field_names(base)]
+        return [self._name]
+
     def __call__(self, **kwargs: Any) -> Evaluator:
         # Re-binding form: always returns a fresh clone. Returning `self`
         # for the no-kwargs case used to make `f is f()` accidentally true,
@@ -328,5 +388,10 @@ def evaluator(fn: Callable[..., Any]) -> Evaluator:
     ``evaluators=[...]`` will accept. Plain callables are rejected at
     registration so the executor can rely on a uniform Union type instead
     of dispatching at runtime.
+
+    The function must declare a return annotation of ``bool`` or a
+    dataclass — the annotation is the score contract (see
+    `_validate_return_annotation`).
     """
+    _validate_return_annotation(fn)
     return Evaluator(fn)
