@@ -71,6 +71,10 @@ def make_eval_wrapper(
         per_case = _extract_per_case_evaluators(kwargs)
         all_evaluators.extend(per_case)
 
+        # Duplicate evaluator names are knowable before running anything —
+        # fail here rather than after burning judge tokens on a doomed case.
+        _check_duplicate_evaluator_names(all_evaluators, case_name)
+
         scores, eval_ctx = await run_evaluators(
             all_evaluators,
             case_name,
@@ -82,9 +86,11 @@ def make_eval_wrapper(
             judge=judge,
         )
 
-        # Detect score-name collisions across evaluators. EvalPayload.scores
-        # is a dict keyed by name; duplicates would silently overwrite each
-        # other downstream. Fail loud so the user can rename the field.
+        # Defense-in-depth backstop. With per-evaluator namespacing and the
+        # pre-execution name check above, no known path reaches this —
+        # distinct evaluator names can't emit the same key. Kept because
+        # EvalPayload.scores is a dict: if a future extraction path ever
+        # produces duplicate keys, silent overwrite is the worst failure.
         seen: set[str] = set()
         duplicates: list[str] = []
         for s in scores:
@@ -158,6 +164,38 @@ def _validate_single_evalcase_param(func: Any) -> None:
 # ---------------------------------------------------------------------------
 # Extract helpers — pull EvalCase from kwargs
 # ---------------------------------------------------------------------------
+
+
+def _check_duplicate_evaluator_names(
+    evaluators: list[Evaluator | ShortCircuit], case_name: str
+) -> None:
+    """Raise ScoreNameCollisionError if an evaluator name appears twice.
+
+    Score names are namespaced per evaluator, so a duplicate evaluator name
+    (the same @evaluator attached twice, possibly rebound with different
+    kwargs) guarantees colliding score keys. Runs before any evaluator —
+    including judge calls — executes.
+    """
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for ev in _flatten_evaluators(evaluators):
+        if ev.name in seen and ev.name not in duplicates:
+            duplicates.append(ev.name)
+        seen.add(ev.name)
+    if duplicates:
+        raise ScoreNameCollisionError(case_name, duplicates)
+
+
+def _flatten_evaluators(
+    evaluators: list[Evaluator | ShortCircuit],
+) -> list[Evaluator]:
+    flat: list[Evaluator] = []
+    for ev in evaluators:
+        if isinstance(ev, ShortCircuit):
+            flat.extend(ev.evaluators)
+        else:
+            flat.append(ev)
+    return flat
 
 
 def _find_case(kwargs: dict[str, Any]) -> EvalCase | None:
@@ -265,10 +303,14 @@ async def _run_short_circuit(
         extracted = extract_scores_from_result(result, ev.name)
         scores.extend(extracted)
         if any(s.is_verdict and not s.passed for s in extracted):
-            # Mark remaining evaluators as skipped
+            # Mark remaining evaluators as skipped. Placeholders carry the
+            # same namespaced keys a real run would emit, so score keys
+            # stay identical across runs whether the short-circuit fired
+            # or not (run-over-run history comparison relies on this).
             for skipped_ev in evaluators[i + 1 :]:
-                scores.append(
-                    EvalScore(name=skipped_ev.name, value=False, skipped=True)
+                scores.extend(
+                    EvalScore(name=score_name, value=False, skipped=True)
+                    for score_name in skipped_ev.score_names()
                 )
             break
     return scores

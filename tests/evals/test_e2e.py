@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path  # noqa: TC003 — used at runtime (pytest tmp_path)
 from typing import Annotated, Any
 
+import pytest
+
 from protest import ForEach, From, ProTestSession, Use, fixture
 from protest.api import run_session
 from protest.core.collector import Collector
@@ -321,7 +323,7 @@ class TestEvalOutput:
         assert len(reports) == 1
         stats = reports[0].all_score_stats()
         assert len(stats) > 0
-        assert any(s.name == "accuracy" for s in stats)
+        assert any(s.name == "fake_accuracy.accuracy" for s in stats)
 
     def test_report_has_pass_count(self) -> None:
         reports: list[EvalSuiteReport] = []
@@ -414,8 +416,8 @@ class TestEvalPayloadFlow:
             assert result.is_eval is True
             assert result.eval_payload is not None
             assert result.eval_payload.case_name in ("case_pass", "case_fail")
-            assert "accuracy" in result.eval_payload.scores
-            assert "matches_expected" in result.eval_payload.scores
+            assert "fake_accuracy.accuracy" in result.eval_payload.scores
+            assert "fake_accuracy.matches_expected" in result.eval_payload.scores
 
     def test_lifecycle_events_have_case_id_in_node_id(self) -> None:
         """setup_done/teardown_start events carry node_id with [case_id]."""
@@ -718,15 +720,15 @@ class TestBuiltinEvaluators:
     def test_contains_keywords(self) -> None:
         e = contains_keywords(keywords=["hello", "world"])
         result = e.run(self._make_ctx("Hello World"))
-        assert result.keyword_recall == 1.0
-        assert result.all_keywords_present is True
+        assert result.recall == 1.0
+        assert result.all_present is True
 
     def test_contains_keywords_default_requires_all(self) -> None:
         """Default `min_recall=1.0` means strict: missing one → verdict False."""
         e = contains_keywords(keywords=["hello", "world"])
         result = e.run(self._make_ctx("Only hello here"))
-        assert result.keyword_recall == 0.5
-        assert result.all_keywords_present is False
+        assert result.recall == 0.5
+        assert result.all_present is False
 
     def test_contains_keywords_threshold_continuity_at_zero(self) -> None:
         """Regression: `min_recall=0.0` must always pass (no discontinuity at 0).
@@ -737,22 +739,22 @@ class TestBuiltinEvaluators:
         """
         e = contains_keywords(keywords=["alpha", "beta"], min_recall=0.0)
         result = e.run(self._make_ctx("nothing matches"))
-        assert result.keyword_recall == 0.0
-        assert result.all_keywords_present is True
+        assert result.recall == 0.0
+        assert result.all_present is True
 
     def test_contains_keywords_threshold_at_exact_value(self) -> None:
         """Verdict passes when recall equals the threshold exactly."""
         e = contains_keywords(keywords=["alpha", "beta"], min_recall=0.5)
         result = e.run(self._make_ctx("only alpha here"))
-        assert result.keyword_recall == 0.5
-        assert result.all_keywords_present is True
+        assert result.recall == 0.5
+        assert result.all_present is True
 
     def test_contains_keywords_threshold_just_below(self) -> None:
         """Verdict fails when recall is below the threshold."""
         e = contains_keywords(keywords=["alpha", "beta", "gamma"], min_recall=0.5)
         result = e.run(self._make_ctx("only alpha"))
-        assert abs(result.keyword_recall - 1 / 3) < 1e-9
-        assert result.all_keywords_present is False
+        assert abs(result.recall - 1 / 3) < 1e-9
+        assert result.all_present is False
 
     def test_contains_expected(self) -> None:
         e = contains_expected
@@ -761,8 +763,8 @@ class TestBuiltinEvaluators:
 
     def test_does_not_contain(self) -> None:
         e = does_not_contain(forbidden=["cat", "dog"])
-        assert e.run(self._make_ctx("Yorkshire")).no_forbidden_words is True
-        assert e.run(self._make_ctx("I like cats")).no_forbidden_words is False
+        assert e.run(self._make_ctx("Yorkshire")).ok is True
+        assert e.run(self._make_ctx("I like cats")).ok is False
 
     def test_not_empty(self) -> None:
         assert not_empty.run(self._make_ctx("hello")) is True
@@ -826,10 +828,10 @@ class TestBuiltinEvaluators:
     def test_json_valid(self) -> None:
         e = json_valid(required_keys=["name"])
         result = e.run(self._make_ctx('{"name": "Rex"}'))
-        assert result.valid_json is True
+        assert result.valid is True
         assert result.has_required_keys is True
         result = e.run(self._make_ctx("not json"))
-        assert result.valid_json is False
+        assert result.valid is False
 
     def test_word_overlap(self) -> None:
         e = word_overlap
@@ -919,40 +921,42 @@ class TestScoringV2:
         # word_overlap returns only float -> tracking-only, always passes
         assert result.success is True
 
-    def test_float_return_raises_type_error(self) -> None:
-        """Evaluator returning naked float -> TypeError (caught as fixture error)."""
-        results: list[Any] = []
+    def test_float_return_annotation_raises_at_decoration(self) -> None:
+        """`-> float` is rejected by @evaluator itself — the return annotation
+        is the score contract and must be bool or a dataclass."""
+        with pytest.raises(TypeError, match="bool or a dataclass"):
 
-        class Collector(PluginBase):
-            name = "collector"
+            @evaluator
+            def bad_evaluator(ctx: EvalContext) -> float:
+                return 0.5
 
-            def on_test_fail(self, result: Any) -> None:
-                results.append(result)
+    def test_missing_return_annotation_raises_at_decoration(self) -> None:
+        with pytest.raises(TypeError, match="bool or a dataclass"):
 
-        @evaluator
-        def bad_evaluator(ctx: EvalContext) -> float:
-            return 0.5
+            @evaluator
+            def unannotated(ctx: EvalContext):
+                return True
 
-        single_case = ForEach(
-            [EvalCase(inputs="hello", expected="hello", name="c1")],
-            ids=lambda c: c.name,
-        )
+    def test_optional_return_annotation_raises_at_decoration(self) -> None:
+        with pytest.raises(TypeError, match="bool or a dataclass"):
 
-        session = ProTestSession()
-        session.register_plugin(Collector())
+            @evaluator
+            def maybe(ctx: EvalContext) -> FakeAccuracyResult | None:
+                return None
 
-        eval_echo_suite = EvalSuite("eval_echo")
-        session.add_suite(eval_echo_suite)
+    def test_unresolvable_return_annotation_raises_at_decoration(self) -> None:
+        """A function-local dataclass can't be resolved by get_type_hints —
+        the placeholder keys would silently diverge from the real run."""
 
-        @eval_echo_suite.eval(evaluators=[bad_evaluator])
-        def eval_echo(case: Annotated[EvalCase, From(single_case)]) -> str:
-            return echo_task(case.inputs)
+        @dataclass
+        class LocalShape:
+            ok: Annotated[bool, Verdict]
 
-        runner = TestRunner(session)
-        runner.run()
+        with pytest.raises(TypeError, match="cannot be resolved"):
 
-        assert len(results) == 1
-        assert results[0].is_fixture_error is True
+            @evaluator
+            def local_shape(ctx: EvalContext) -> LocalShape:
+                return LocalShape(ok=True)
 
 
 class TestShortCircuit:
