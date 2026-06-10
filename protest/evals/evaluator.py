@@ -240,6 +240,21 @@ class Reason:
     """Annotate a str field as a reason displayed on failure."""
 
 
+def _annotated_score_field_names(cls: type) -> list[str]:
+    """Names of the Metric/Verdict/Reason-annotated fields of a dataclass."""
+    names = []
+    hints = get_type_hints(cls, include_extras=True)
+    for f in dataclasses.fields(cls):
+        ann = hints.get(f.name)
+        if ann is None or get_origin(ann) is not Annotated:
+            continue
+        for meta in get_args(ann)[1:]:
+            if isinstance(meta, type) and issubclass(meta, (Metric, Verdict, Reason)):
+                names.append(f.name)
+                break
+    return names
+
+
 def extract_scores_from_result(result: Any, evaluator_name: str) -> list[Any]:
     """Extract EvalScore instances from an evaluator result.
 
@@ -258,24 +273,10 @@ def extract_scores_from_result(result: Any, evaluator_name: str) -> list[Any]:
         return [EvalScore(name=evaluator_name, value=result)]
 
     if dataclasses.is_dataclass(result) and not isinstance(result, type):
-        scores = []
-        hints = get_type_hints(type(result), include_extras=True)
-        for f in dataclasses.fields(result):
-            ann = hints.get(f.name)
-            if ann is None or get_origin(ann) is not Annotated:
-                continue
-            for meta in get_args(ann)[1:]:
-                if isinstance(meta, type) and issubclass(
-                    meta, (Metric, Verdict, Reason)
-                ):
-                    scores.append(
-                        EvalScore(
-                            name=f"{evaluator_name}.{f.name}",
-                            value=getattr(result, f.name),
-                        )
-                    )
-                    break
-        return scores
+        return [
+            EvalScore(name=f"{evaluator_name}.{name}", value=getattr(result, name))
+            for name in _annotated_score_field_names(type(result))
+        ]
 
     type_name = type(result).__name__
     raise TypeError(f"Evaluator must return bool or dataclass, got {type_name}")
@@ -307,6 +308,28 @@ class Evaluator:
     @property
     def name(self) -> str:
         return self._name
+
+    def score_names(self) -> list[str]:
+        """Score names this evaluator emits, derived from its return annotation.
+
+        Mirrors `extract_scores_from_result` without running the evaluator:
+        a dataclass return annotation yields the namespaced
+        ``<name>.<field>`` names; anything else (bool, missing or
+        unresolvable annotation) yields the bare evaluator name. Used to
+        build skipped placeholders with the same keys as a real run, so
+        score keys stay stable whether or not a ShortCircuit fired.
+        """
+        try:
+            hints = get_type_hints(self._fn)
+        except NameError:
+            # Unresolvable annotation (e.g. TYPE_CHECKING-only import).
+            # Execution would still work — it reads type(result) — so the
+            # placeholder must not be stricter than the real run.
+            return [self._name]
+        ret = hints.get("return")
+        if isinstance(ret, type) and dataclasses.is_dataclass(ret):
+            return [f"{self._name}.{n}" for n in _annotated_score_field_names(ret)]
+        return [self._name]
 
     def __call__(self, **kwargs: Any) -> Evaluator:
         # Re-binding form: always returns a fresh clone. Returning `self`

@@ -134,8 +134,74 @@ class TestCollisionRaises:
         with pytest.raises(ScoreNameCollisionError) as excinfo:
             asyncio.run(_invoke([_shape_a, _shape_a], EvalCase(inputs="x", name="c3")))
         msg = str(excinfo.value)
-        assert "_shape_a.matches" in msg
+        assert "_shape_a" in msg
         assert "c3" in msg
+
+    def test_collision_detected_before_any_evaluator_runs(self) -> None:
+        """The name check fires pre-execution — no evaluator (judge) call is made."""
+        calls: list[str] = []
+
+        @evaluator
+        def _counting(ctx: EvalContext) -> bool:
+            calls.append("ran")
+            return True
+
+        with pytest.raises(ScoreNameCollisionError):
+            asyncio.run(
+                _invoke([_counting, _counting], EvalCase(inputs="x", name="c4"))
+            )
+        assert calls == []
+
+    def test_collision_inside_short_circuit_detected(self) -> None:
+        from protest.evals import ShortCircuit  # noqa: PLC0415
+
+        with pytest.raises(ScoreNameCollisionError):
+            asyncio.run(
+                _invoke(
+                    [_bool_one, ShortCircuit([_bool_one])],
+                    EvalCase(inputs="x", name="c5"),
+                )
+            )
+
+
+class TestSkippedPlaceholderNamespacing:
+    """Short-circuited evaluators emit placeholders under the same keys a
+    real run would produce, so score keys are stable across runs."""
+
+    def test_skipped_dataclass_evaluator_keeps_namespaced_keys(self) -> None:
+        from protest.evals import ShortCircuit  # noqa: PLC0415
+
+        @evaluator
+        def _gate(ctx: EvalContext) -> bool:
+            return False  # always short-circuits
+
+        payload = asyncio.run(
+            _invoke(
+                [ShortCircuit([_gate, _shape_a])],
+                EvalCase(inputs="x", name="c1"),
+            )
+        )
+        assert "_shape_a.matches" in payload.scores
+        assert "_shape_a.detail" in payload.scores
+        assert payload.scores["_shape_a.matches"].skipped is True
+        # Bare evaluator name must NOT appear — that was the pre-namespacing key.
+        assert "_shape_a" not in payload.scores
+
+    def test_skipped_bool_evaluator_keeps_bare_name(self) -> None:
+        from protest.evals import ShortCircuit  # noqa: PLC0415
+
+        @evaluator
+        def _gate(ctx: EvalContext) -> bool:
+            return False
+
+        payload = asyncio.run(
+            _invoke(
+                [ShortCircuit([_gate, _bool_one])],
+                EvalCase(inputs="x", name="c1"),
+            )
+        )
+        assert "_bool_one" in payload.scores
+        assert payload.scores["_bool_one"].skipped is True
 
 
 class TestSessionPath:
