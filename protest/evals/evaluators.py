@@ -77,8 +77,9 @@ def contains_expected(ctx: EvalContext[Any, str], case_sensitive: bool = False) 
         raise ValueError(
             f"contains_expected on case '{ctx.name}': expected_output is None. "
             f"This evaluator needs EvalCase(expected=...) to have something to "
-            f"check — a vacuous pass would hide a case-wiring mistake. Remove "
-            f"the evaluator from cases without expected, or set expected."
+            f"check; a vacuous pass would hide a case-wiring mistake. Set "
+            f"expected on the case, or attach this evaluator per-case via "
+            f"EvalCase(evaluators=[...]) when only some cases carry expected."
         )
     if case_sensitive:
         return ctx.expected_output in ctx.output
@@ -167,9 +168,10 @@ def word_overlap(ctx: EvalContext[Any, str]) -> WordOverlapResult:
         raise ValueError(
             f"word_overlap on case '{ctx.name}': expected_output is None. "
             f"This evaluator needs EvalCase(expected=...) to have something "
-            f"to compare against — a fake 1.0 would poison the tracked "
-            f"metric. Remove the evaluator from cases without expected, or "
-            f"set expected."
+            f"to compare against; a fake 1.0 would poison the tracked "
+            f"metric. Set expected on the case, or attach this evaluator "
+            f"per-case via EvalCase(evaluators=[...]) when only some cases "
+            f"carry expected."
         )
     expected = str(ctx.expected_output)
     expected_words = set(expected.lower().split())
