@@ -761,6 +761,17 @@ class TestBuiltinEvaluators:
         assert e.run(self._make_ctx("Hello World", "world")) is True
         assert e.run(self._make_ctx("Hello", "world")) is False
 
+    def test_contains_expected_none_expected_raises(self) -> None:
+        """Regression (#118): None expected used to pass vacuously, hiding
+        case-wiring mistakes."""
+        with pytest.raises(ValueError, match="expected_output is None"):
+            contains_expected.run(self._make_ctx("Hello"))
+
+    def test_word_overlap_none_expected_raises(self) -> None:
+        """Regression (#118): None expected used to report a fake 1.0."""
+        with pytest.raises(ValueError, match="expected_output is None"):
+            word_overlap.run(self._make_ctx("Hello"))
+
     def test_does_not_contain(self) -> None:
         e = does_not_contain(forbidden=["cat", "dog"])
         assert e.run(self._make_ctx("Yorkshire")).ok is True
