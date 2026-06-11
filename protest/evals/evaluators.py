@@ -67,9 +67,20 @@ def contains_keywords(
 
 @evaluator
 def contains_expected(ctx: EvalContext[Any, str], case_sensitive: bool = False) -> bool:
-    """Check that the output contains expected_output as a substring."""
+    """Check that the output contains expected_output as a substring.
+
+    Requires `expected` on the case: with None it has nothing to check,
+    and passing vacuously would make a wiring mistake (case data not
+    reaching the eval) look like a healthy run.
+    """
     if ctx.expected_output is None:
-        return True
+        raise ValueError(
+            f"contains_expected on case '{ctx.name}': expected_output is None. "
+            f"This evaluator needs EvalCase(expected=...) to have something to "
+            f"check; a vacuous pass would hide a case-wiring mistake. Set "
+            f"expected on the case, or attach this evaluator per-case via "
+            f"EvalCase(evaluators=[...]) when only some cases carry expected."
+        )
     if case_sensitive:
         return ctx.expected_output in ctx.output
     return ctx.expected_output.lower() in ctx.output.lower()
@@ -147,9 +158,21 @@ def json_valid(
 
 @evaluator
 def word_overlap(ctx: EvalContext[Any, str]) -> WordOverlapResult:
-    """Compute word overlap between output and expected_output (tracking-only)."""
+    """Compute word overlap between output and expected_output (tracking-only).
+
+    Requires `expected` on the case: with None there is nothing to overlap
+    with, and reporting a perfect 1.0 would poison the tracked metric while
+    hiding a case-wiring mistake.
+    """
     if ctx.expected_output is None:
-        return WordOverlapResult(overlap=1.0)
+        raise ValueError(
+            f"word_overlap on case '{ctx.name}': expected_output is None. "
+            f"This evaluator needs EvalCase(expected=...) to have something "
+            f"to compare against; a fake 1.0 would poison the tracked "
+            f"metric. Set expected on the case, or attach this evaluator "
+            f"per-case via EvalCase(evaluators=[...]) when only some cases "
+            f"carry expected."
+        )
     expected = str(ctx.expected_output)
     expected_words = set(expected.lower().split())
     output_words = set(ctx.output.lower().split())

@@ -371,6 +371,12 @@ Dataclass fields surface as `<evaluator>.<field>` in scores - e.g.
 `contains_keywords.recall`, `json_valid.valid` (see
 [Score Namespacing](#score-namespacing)).
 
+`contains_expected` and `word_overlap` require `expected` on the case and
+raise when it is `None`: with nothing to compare against, a vacuous pass
+(or a fake `overlap=1.0`) would make a case-wiring mistake look like a
+healthy run. Attach them only to cases that carry `expected`, per-case if
+the case set is mixed.
+
 ## Fixtures
 
 Evals use the same fixture system as tests. Expensive setup (database, pipeline, graph) runs once and is shared across all cases.
