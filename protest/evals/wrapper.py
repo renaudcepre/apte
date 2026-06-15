@@ -13,6 +13,7 @@ import time
 from typing import Annotated, Any, get_args, get_origin
 
 from protest.di.hints import get_type_hints_compat
+from protest.di.markers import From
 from protest.entities.events import EvalPayload, EvalScoreEntry
 from protest.evals.evaluator import (
     EvalCase,
@@ -39,18 +40,23 @@ def make_eval_wrapper(
 ) -> Any:
     """Wrap a function to run evaluators on its return value."""
 
-    _validate_single_evalcase_param(func)
+    # Resolve which parameter carries the EvalCase once, statically. The name
+    # is then used for a direct kwargs lookup below - the case is never
+    # rediscovered by scanning values.
+    case_param = _resolve_case_param(func)
     validate_evaluators(evaluators)
 
     @functools.wraps(func)
     async def eval_wrapper(**kwargs: Any) -> EvalPayload:
-        expected = _extract_expected(kwargs)
-        case_name = _extract_case_name(kwargs, func.__name__)
-        inputs = _extract_inputs(kwargs)
-        metadata = _extract_metadata(kwargs)
+        case = kwargs.get(case_param) if case_param is not None else None
+        expected = case.expected if case is not None else None
+        case_name = case.name if case is not None else func.__name__
+        inputs = case.inputs if case is not None else None
+        metadata = (case.metadata or None) if case is not None else None
 
         all_evaluators = list(evaluators)
-        all_evaluators.extend(_extract_per_case_evaluators(kwargs))
+        if case is not None and case.evaluators:
+            all_evaluators.extend(case.evaluators)
 
         # Both guards run before the task itself: the evaluator list is
         # fully known from the kwargs alone, and the task is typically the
@@ -140,35 +146,59 @@ def make_eval_wrapper(
 # ---------------------------------------------------------------------------
 
 
-def _validate_single_evalcase_param(func: Any) -> None:
-    """Raise MultipleEvalCaseParamsError if `func` has > 1 EvalCase parameter.
+def _resolve_case_param(func: Any) -> str | None:
+    """Return the name of the single parameter that carries the EvalCase.
 
-    Runs at decorator time. The runtime contract (`_find_case`) silently
-    picks the first EvalCase in kwargs, which would drop the second one's
-    name/expected/inputs/metadata/per-case evaluators downstream. We catch
-    that here so the failure is loud and pinpoints the offending eval.
+    Resolved once at decoration time, from the signature alone. A parameter
+    is the case parameter when either signal holds:
 
-    Subclasses of EvalCase count: the runtime uses isinstance(_, EvalCase),
-    so any subclass would trigger the same silent drop.
+    - its declared type is an EvalCase (subclass) - ``case: EvalCase`` or
+      ``Annotated[EvalCase, From(cases)]``; or
+    - it is bound via ``From(source)`` whose source yields EvalCase instances -
+      ``Annotated[Any, From(cases)]``, where the type is deliberately loose.
+
+    The returned name drives a direct ``kwargs[name]`` lookup at runtime. This
+    is the whole point: the case is identified by *which parameter it is*, not
+    by scanning kwargs values for an EvalCase instance. A fixture that merely
+    returns an EvalCase on an unrelated parameter therefore cannot be mistaken
+    for the case (the silent misattribution the old isinstance scan allowed).
+
+    Raises MultipleEvalCaseParamsError if more than one parameter qualifies -
+    only one case per eval defines its identity (name, expected, inputs,
+    metadata, per-case evaluators). Returns None when no parameter qualifies
+    (a static eval, or one parametrized over non-EvalCase values).
     """
     hints = get_type_hints_compat(func)
-    offending: list[str] = []
-    for param_name, annotation in hints.items():
-        if param_name == "return":
-            continue
-        underlying = (
-            get_args(annotation)[0]
-            if get_origin(annotation) is Annotated
-            else annotation
-        )
+    matches = [
+        name
+        for name, annotation in hints.items()
+        if name != "return" and _is_case_param(annotation)
+    ]
+    if len(matches) > 1:
+        raise MultipleEvalCaseParamsError(func.__name__, matches)
+    return matches[0] if matches else None
+
+
+def _is_case_param(annotation: Any) -> bool:
+    if get_origin(annotation) is Annotated:
+        args = get_args(annotation)
+        underlying = args[0]
         if isinstance(underlying, type) and issubclass(underlying, EvalCase):
-            offending.append(param_name)
-    if len(offending) > 1:
-        raise MultipleEvalCaseParamsError(func.__name__, offending)
+            return True
+        return any(
+            isinstance(meta, From) and _source_yields_evalcase(meta.source)
+            for meta in args[1:]
+        )
+    return isinstance(annotation, type) and issubclass(annotation, EvalCase)
+
+
+def _source_yields_evalcase(source: Any) -> bool:
+    """True if a From source yields EvalCase instances (ForEach is non-empty)."""
+    return isinstance(next(iter(source), None), EvalCase)
 
 
 # ---------------------------------------------------------------------------
-# Extract helpers - pull EvalCase from kwargs
+# Evaluator list helpers
 # ---------------------------------------------------------------------------
 
 
@@ -202,49 +232,6 @@ def _flatten_evaluators(
         else:
             flat.append(ev)
     return flat
-
-
-def _find_case(kwargs: dict[str, Any]) -> EvalCase | None:
-    """Find the EvalCase instance in kwargs."""
-    for v in kwargs.values():
-        if isinstance(v, EvalCase):
-            return v
-    return None
-
-
-def _extract_expected(kwargs: dict[str, Any]) -> Any:
-    case = _find_case(kwargs)
-    if case is None:
-        return None
-    return case.expected
-
-
-def _extract_case_name(kwargs: dict[str, Any], fallback: str) -> str:
-    case = _find_case(kwargs)
-    if case is None:
-        return fallback
-    return case.name
-
-
-def _extract_inputs(kwargs: dict[str, Any]) -> Any:
-    case = _find_case(kwargs)
-    if case is None:
-        return None
-    return case.inputs
-
-
-def _extract_metadata(kwargs: dict[str, Any]) -> Any:
-    case = _find_case(kwargs)
-    if case is None:
-        return None
-    return case.metadata or None
-
-
-def _extract_per_case_evaluators(kwargs: dict[str, Any]) -> list[Any]:
-    case = _find_case(kwargs)
-    if case is None or not case.evaluators:
-        return []
-    return list(case.evaluators)
 
 
 # ---------------------------------------------------------------------------
