@@ -8,12 +8,18 @@ downstream code work on a uniform ``Evaluator | ShortCircuit`` Union.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Annotated
+
 import pytest
 
 from protest.evals.evaluator import (
     EvalCase,
     EvalContext,
+    Metric,
+    Reason,
     ShortCircuit,
+    Verdict,
     evaluator,
     validate_evaluators,
 )
@@ -26,6 +32,34 @@ def _ok(ctx: EvalContext) -> bool:
 
 def _plain_callable(ctx: EvalContext) -> bool:
     return True
+
+
+# Module-level dataclasses so get_type_hints can resolve the return annotation.
+@dataclass
+class _NoAnnotatedFields:
+    note: str
+    count: int
+
+
+@dataclass
+class _MetricOnly:
+    overlap: Annotated[float, Metric]
+
+
+@dataclass
+class _VerdictOnly:
+    ok: Annotated[bool, Verdict]
+
+
+@dataclass
+class _ReasonOnly:
+    why: Annotated[str, Reason]
+
+
+@dataclass
+class _AnnotatedPlusMetadata:
+    ok: Annotated[bool, Verdict]
+    debug: dict  # unannotated free metadata, ignored by the runner
 
 
 class TestValidateEvaluators:
@@ -55,3 +89,48 @@ class TestEvalCaseValidates:
 
     def test_evalcase_accepts_evaluator(self) -> None:
         EvalCase(inputs="x", name="c", evaluators=[_ok])
+
+
+class TestDataclassReturnMustHaveAnnotatedField:
+    """A dataclass return with zero Metric/Verdict/Reason fields emits no
+    scores, so a case relying only on it passes vacuously - the silent pass
+    that survives the NoEvaluatorsError guard (that guard counts evaluators,
+    not scores). Reject it at decoration time.
+    """
+
+    def test_zero_annotated_fields_raises(self) -> None:
+        with pytest.raises(TypeError, match="no Metric/Verdict/Reason"):
+
+            @evaluator
+            def empty(ctx: EvalContext) -> _NoAnnotatedFields:
+                return _NoAnnotatedFields(note="x", count=1)
+
+    def test_metric_only_accepted(self) -> None:
+        """Tracking-only evaluators (e.g. word_overlap) stay valid."""
+
+        @evaluator
+        def tracker(ctx: EvalContext) -> _MetricOnly:
+            return _MetricOnly(overlap=1.0)
+
+        assert tracker.score_names() == ["tracker.overlap"]
+
+    def test_verdict_only_accepted(self) -> None:
+        @evaluator
+        def verdict(ctx: EvalContext) -> _VerdictOnly:
+            return _VerdictOnly(ok=True)
+
+        assert verdict.score_names() == ["verdict.ok"]
+
+    def test_reason_only_accepted(self) -> None:
+        @evaluator
+        def reason(ctx: EvalContext) -> _ReasonOnly:
+            return _ReasonOnly(why="because")
+
+        assert reason.score_names() == ["reason.why"]
+
+    def test_annotated_field_alongside_metadata_accepted(self) -> None:
+        @evaluator
+        def mixed(ctx: EvalContext) -> _AnnotatedPlusMetadata:
+            return _AnnotatedPlusMetadata(ok=True, debug={})
+
+        assert mixed.score_names() == ["mixed.ok"]
