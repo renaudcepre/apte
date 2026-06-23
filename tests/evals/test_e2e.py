@@ -769,6 +769,19 @@ class TestBuiltinEvaluators:
         ):
             contains_expected.run(self._make_ctx("Hello"))
 
+    def test_contains_expected_empty_expected_raises(self) -> None:
+        """#126: '' is a substring of every output -> vacuous pass."""
+        with pytest.raises(
+            ValueError, match=r"contains_expected .* empty or whitespace-only"
+        ):
+            contains_expected.run(self._make_ctx("Hello", ""))
+
+    def test_contains_expected_whitespace_expected_raises(self) -> None:
+        with pytest.raises(
+            ValueError, match=r"contains_expected .* empty or whitespace-only"
+        ):
+            contains_expected.run(self._make_ctx("Hello", "   "))
+
     def test_does_not_contain(self) -> None:
         e = does_not_contain(forbidden=["cat", "dog"])
         assert e.run(self._make_ctx("Yorkshire")).ok is True
@@ -853,6 +866,19 @@ class TestBuiltinEvaluators:
             ValueError, match=r"word_overlap .* expected_output is None"
         ):
             word_overlap.run(self._make_ctx("Hello"))
+
+    def test_word_overlap_empty_expected_raises(self) -> None:
+        """#126: empty expected -> no words -> fabricated overlap=1.0."""
+        with pytest.raises(
+            ValueError, match=r"word_overlap .* empty or whitespace-only"
+        ):
+            word_overlap.run(self._make_ctx("Hello", ""))
+
+    def test_word_overlap_whitespace_expected_raises(self) -> None:
+        with pytest.raises(
+            ValueError, match=r"word_overlap .* empty or whitespace-only"
+        ):
+            word_overlap.run(self._make_ctx("Hello", "   "))
 
 
 # ---------------------------------------------------------------------------

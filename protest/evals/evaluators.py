@@ -69,9 +69,10 @@ def contains_keywords(
 def contains_expected(ctx: EvalContext[Any, str], case_sensitive: bool = False) -> bool:
     """Check that the output contains expected_output as a substring.
 
-    Requires `expected` on the case: with None it has nothing to check,
-    and passing vacuously would make a wiring mistake (case data not
-    reaching the eval) look like a healthy run.
+    Requires a non-empty `expected` on the case: with None there is nothing
+    to check, and with an empty or whitespace-only string ``"" in output`` is
+    true for every output. Either way a vacuous pass would make a wiring
+    mistake (case data not reaching the eval) look like a healthy run.
     """
     if ctx.expected_output is None:
         raise ValueError(
@@ -80,6 +81,14 @@ def contains_expected(ctx: EvalContext[Any, str], case_sensitive: bool = False) 
             f"check; a vacuous pass would hide a case-wiring mistake. Set "
             f"expected on the case, or attach this evaluator per-case via "
             f"EvalCase(evaluators=[...]) when only some cases carry expected."
+        )
+    if isinstance(ctx.expected_output, str) and not ctx.expected_output.strip():
+        raise ValueError(
+            f"contains_expected on case '{ctx.name}': expected_output is empty "
+            f"or whitespace-only. An empty string is a substring of every "
+            f"output, so the check would pass vacuously regardless of the "
+            f"result. Set a non-empty expected on the case, or attach this "
+            f"evaluator per-case via EvalCase(evaluators=[...])."
         )
     if case_sensitive:
         return ctx.expected_output in ctx.output
@@ -160,9 +169,10 @@ def json_valid(
 def word_overlap(ctx: EvalContext[Any, str]) -> WordOverlapResult:
     """Compute word overlap between output and expected_output (tracking-only).
 
-    Requires `expected` on the case: with None there is nothing to overlap
-    with, and reporting a perfect 1.0 would poison the tracked metric while
-    hiding a case-wiring mistake.
+    Requires a non-empty `expected` on the case: with None there is nothing
+    to overlap with, and with an empty or whitespace-only string there are no
+    words to compare against. Either way reporting a perfect 1.0 would poison
+    the tracked metric while hiding a case-wiring mistake.
     """
     if ctx.expected_output is None:
         raise ValueError(
@@ -177,7 +187,13 @@ def word_overlap(ctx: EvalContext[Any, str]) -> WordOverlapResult:
     expected_words = set(expected.lower().split())
     output_words = set(ctx.output.lower().split())
     if not expected_words:
-        return WordOverlapResult(overlap=1.0)
+        raise ValueError(
+            f"word_overlap on case '{ctx.name}': expected_output is empty or "
+            f"whitespace-only, so there are no words to compare against. "
+            f"Reporting overlap=1.0 would poison the tracked metric. Set a "
+            f"non-empty expected on the case, or attach this evaluator "
+            f"per-case via EvalCase(evaluators=[...])."
+        )
     return WordOverlapResult(
         overlap=len(expected_words & output_words) / len(expected_words),
     )
