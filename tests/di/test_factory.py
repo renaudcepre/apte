@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 import pytest
 
-from protest.di.factory import FixtureFactory
-from protest.entities import Fixture
-from protest.exceptions import FixtureError
+from apte.di.factory import FixtureFactory
+from apte.entities import Fixture
+from apte.exceptions import FixtureError
 
 
 @dataclass

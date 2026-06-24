@@ -1,8 +1,8 @@
-from protest import ProTestSession, ProTestSuite
+from apte import ApteSession, ApteSuite
 
-session = ProTestSession()
+session = ApteSession()
 session.register_default_plugins()
-api_suite = ProTestSuite("API", tags=["api"])
+api_suite = ApteSuite("API", tags=["api"])
 session.add_suite(api_suite)
 
 

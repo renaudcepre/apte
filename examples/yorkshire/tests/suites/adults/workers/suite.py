@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+from apte import ApteSuite, FixtureFactory, Use
 from examples.yorkshire.app.domain import Job, Yorkshire
 from examples.yorkshire.app.workers import (
     ChefKitchen,
@@ -18,13 +19,12 @@ from examples.yorkshire.tests.suites.adults.workers.fixtures import (
     setup_work_environment,
     work_schedule,
 )
-from protest import FixtureFactory, ProTestSuite, Use
 
 # =============================================================================
 # WORKERS SUITE (parent)
 # =============================================================================
 
-workers_suite = ProTestSuite(
+workers_suite = ApteSuite(
     "Workers",
     tags=["working"],
     max_concurrency=2,
@@ -40,7 +40,7 @@ workers_suite.bind(scheduled_worker)
 # DETECTIVES SUITE (child of Workers)
 # =============================================================================
 
-detectives_suite = ProTestSuite(
+detectives_suite = ApteSuite(
     "Detectives",
     tags=["investigation"],
     description="Tests for detective yorkshires",
@@ -86,7 +86,7 @@ def test_detective_tools_persist_across_tests(
 # CHEFS SUITE (child of Workers)
 # =============================================================================
 
-chefs_suite = ProTestSuite(
+chefs_suite = ApteSuite(
     "Chefs",
     tags=["culinary"],
     description="Tests for chef yorkshires",

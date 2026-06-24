@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from protest.evals import EvalCase
+from apte.evals import EvalCase
 
 
 class TestEvalCaseRequiresName:

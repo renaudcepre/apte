@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from protest import LoadError, ProTestSession, load_session
-from protest.loader import parse_target
+from apte import ApteSession, LoadError, load_session
+from apte.loader import parse_target
 
 
 def unique_module_name() -> str:
@@ -39,12 +39,12 @@ class TestLoadSessionObjectNotFound:
         with pytest.raises(LoadError, match="No 'session' found in module"):
             load_session(f"{module_name}:session", app_dir=str(tmp_path))
 
-    def test_object_is_not_protest_session(self, tmp_path: Path) -> None:
+    def test_object_is_not_apte_session(self, tmp_path: Path) -> None:
         module_name = unique_module_name()
         module_file = tmp_path / f"{module_name}.py"
         module_file.write_text("session = 'not a session'\n")
 
-        with pytest.raises(LoadError, match="is not a ProTestSession"):
+        with pytest.raises(LoadError, match="is not a ApteSession"):
             load_session(f"{module_name}:session", app_dir=str(tmp_path))
 
 
@@ -53,9 +53,9 @@ class TestLoadSessionSuccess:
         module_name = unique_module_name()
         module_file = tmp_path / f"{module_name}.py"
         module_file.write_text("""
-from protest import ProTestSession
+from apte import ApteSession
 
-my_session = ProTestSession()
+my_session = ApteSession()
 
 @my_session.test()
 def test_example():
@@ -63,7 +63,7 @@ def test_example():
 """)
 
         session = load_session(f"{module_name}:my_session", app_dir=str(tmp_path))
-        assert isinstance(session, ProTestSession)
+        assert isinstance(session, ApteSession)
         expected_test_count = 1
         assert len(session.tests) == expected_test_count
 
@@ -73,9 +73,9 @@ def test_example():
         subdir.mkdir()
         (subdir / "__init__.py").write_text("")
         (subdir / "tests.py").write_text("""
-from protest import ProTestSession
+from apte import ApteSession
 
-session = ProTestSession()
+session = ApteSession()
 
 @session.test()
 def test_nested():
@@ -83,21 +83,21 @@ def test_nested():
 """)
 
         session = load_session(f"{pkg_name}.tests:session", app_dir=str(tmp_path))
-        assert isinstance(session, ProTestSession)
+        assert isinstance(session, ApteSession)
 
     def test_load_session_custom_name(self, tmp_path: Path) -> None:
         module_name = unique_module_name()
         module_file = tmp_path / f"{module_name}.py"
         module_file.write_text("""
-from protest import ProTestSession
+from apte import ApteSession
 
-custom_session_name = ProTestSession()
+custom_session_name = ApteSession()
 """)
 
         session = load_session(
             f"{module_name}:custom_session_name", app_dir=str(tmp_path)
         )
-        assert isinstance(session, ProTestSession)
+        assert isinstance(session, ApteSession)
 
 
 class TestLoadSessionAppDir:
@@ -105,23 +105,23 @@ class TestLoadSessionAppDir:
         module_name = unique_module_name()
         module_file = tmp_path / f"{module_name}.py"
         module_file.write_text("""
-from protest import ProTestSession
-session = ProTestSession()
+from apte import ApteSession
+session = ApteSession()
 """)
 
         session = load_session(f"{module_name}:session", app_dir=str(tmp_path))
-        assert isinstance(session, ProTestSession)
+        assert isinstance(session, ApteSession)
 
     def test_default_app_dir_is_current_directory(self) -> None:
         module_name = unique_module_name()
         module_file = Path(f"{module_name}.py")
         module_file.write_text("""
-from protest import ProTestSession
-session = ProTestSession()
+from apte import ApteSession
+session = ApteSession()
 """)
         try:
             session = load_session(f"{module_name}:session")
-            assert isinstance(session, ProTestSession)
+            assert isinstance(session, ApteSession)
         finally:
             module_file.unlink()
             sys.modules.pop(module_name, None)

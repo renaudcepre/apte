@@ -1,0 +1,61 @@
+name: Publish to PyPI
+
+# -----------------------------------------------------------------------------
+# PARKED - manual trigger only.
+#
+# The distribution name 'apte' is available on PyPI, so the old blocker (the
+# 'protest' name was taken, PEP 541 reclaim pending) is gone. This workflow
+# stays on workflow_dispatch only until the PyPI Trusted Publisher is configured,
+# so a release never triggers a failing publish.
+#
+# To ACTIVATE once the Trusted Publisher exists:
+#   1. On PyPI, add a Trusted Publisher (or a pending publisher for the brand-new
+#      'apte' project):
+#        owner=renaudcepre, repo=<github repo>, workflow=publish.yml, environment=pypi
+#      Note: 'repo' must match the actual GitHub repo slug. The repo is still
+#      named 'protest' until renamed to 'apte'; configure the publisher with
+#      whatever the slug is at that point.
+#   2. Add the release trigger below:
+#        on:
+#          release:
+#            types: [published]   # release-please publishes the GitHub release
+#          workflow_dispatch:
+# -----------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build sdist + wheel
+        run: uv build
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/apte
+    permissions:
+      id-token: write # OIDC for PyPI Trusted Publishing - no API token stored
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

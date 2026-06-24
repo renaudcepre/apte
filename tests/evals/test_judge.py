@@ -7,9 +7,9 @@ from typing import Annotated, Any
 
 import pytest
 
-from protest import ForEach, From, ProTestSession
-from protest.core.runner import TestRunner
-from protest.evals import (
+from apte import ApteSession, ForEach, From
+from apte.core.runner import TestRunner
+from apte.evals import (
     EvalContext,
     Judge,
     JudgeResponse,
@@ -17,8 +17,8 @@ from protest.evals import (
     Verdict,
     evaluator,
 )
-from protest.evals.suite import EvalSuite
-from protest.plugin import PluginBase
+from apte.evals.suite import EvalSuite
+from apte.plugin import PluginBase
 
 # ---------------------------------------------------------------------------
 # Fake judge for testing
@@ -218,7 +218,7 @@ class TestEvalContextJudge:
 
 
 # ---------------------------------------------------------------------------
-# E2E: ProTestSession with judge on EvalSuite
+# E2E: ApteSession with judge on EvalSuite
 # ---------------------------------------------------------------------------
 
 single_case = ForEach(
@@ -235,7 +235,7 @@ class TestJudgeE2E:
         async def judge_evaluator(ctx: EvalContext) -> bool:
             return await ctx.judge("pass this", bool)
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo", judge=FakeJudge())
         session.add_suite(eval_echo_suite)
 
@@ -254,7 +254,7 @@ class TestJudgeE2E:
         async def needs_judge(ctx: EvalContext) -> bool:
             return await ctx.judge("test", bool)
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo")  # no judge
         session.add_suite(eval_echo_suite)
 
@@ -286,7 +286,7 @@ class TestJudgeE2E:
             r2 = await ctx.judge("pass second", bool)
             return r1 and r2
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo", judge=FakeJudge())
         session.add_suite(eval_echo_suite)
 
@@ -339,7 +339,7 @@ class TestJudgeE2E:
         async def struct_evaluator(ctx: EvalContext) -> JudgeVerdict:
             return await ctx.judge("evaluate this", JudgeVerdict)
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo", judge=StructuredJudge())
         session.add_suite(eval_echo_suite)
 
@@ -365,7 +365,7 @@ class TestTaskResult:
         def check_output(ctx: EvalContext) -> bool:
             return ctx.output == "hello"  # sees str, not TaskResult
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
 
@@ -389,7 +389,7 @@ class TestTaskResult:
         def always_pass(ctx: EvalContext) -> bool:
             return True
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
 
@@ -427,7 +427,7 @@ class TestTaskResult:
         def always_pass(ctx: EvalContext) -> bool:
             return True
 
-        session = ProTestSession()
+        session = ApteSession()
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
 

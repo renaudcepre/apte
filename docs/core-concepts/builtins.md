@@ -1,6 +1,6 @@
 # Built-in Fixtures
 
-ProTest provides built-in fixtures for common testing needs. These are ready to use without any setup.
+Apte provides built-in fixtures for common testing needs. These are ready to use without any setup.
 
 ## caplog
 
@@ -8,11 +8,11 @@ Captures log records during a test.
 
 ```python
 from typing import Annotated
-from protest import ProTestSession, Use, caplog
-from protest.entities import LogCapture
+from apte import ApteSession, Use, caplog
+from apte.entities import LogCapture
 import logging
 
-session = ProTestSession()
+session = ApteSession()
 
 @session.test()
 def test_logging(logs: Annotated[LogCapture, Use(caplog)]):
@@ -38,9 +38,9 @@ Provides a flat mocking API with automatic cleanup, avoiding nested context mana
 
 ```python
 from typing import Annotated
-from protest import ProTestSession, Use, Mocker, mocker
+from apte import ApteSession, Use, Mocker, mocker
 
-session = ProTestSession()
+session = ApteSession()
 
 @session.test()
 async def test_payment(m: Annotated[Mocker, Use(mocker)]):
@@ -76,7 +76,7 @@ def test_order():
 
 **Decorator conflicts with DI**
 
-`@patch` injects arguments positionally, which conflicts with ProTest's DI system:
+`@patch` injects arguments positionally, which conflicts with Apte's DI system:
 
 ```python
 # DON'T DO THIS - will break
@@ -219,7 +219,7 @@ def test_phases(m: Annotated[Mocker, Use(mocker)]):
 For better IDE support, use the exported type aliases:
 
 ```python
-from protest import Mocker, MockType, AsyncMockType, Use, mocker
+from apte import Mocker, MockType, AsyncMockType, Use, mocker
 
 @session.test()
 def test_typed(m: Annotated[Mocker, Use(mocker)]):
@@ -234,9 +234,9 @@ Provides a temporary directory that is automatically cleaned up after the test.
 ```python
 from pathlib import Path
 from typing import Annotated
-from protest import ProTestSession, Use, tmp_path
+from apte import ApteSession, Use, tmp_path
 
-session = ProTestSession()
+session = ApteSession()
 
 @session.test()
 def test_file_operations(tmp: Annotated[Path, Use(tmp_path)]):
@@ -267,9 +267,9 @@ def test_file_operations(tmp: Annotated[Path, Use(tmp_path)]):
 Async-safe subprocess runner with isolated output capture. Use this for CLI and integration tests.
 
 ```python
-from protest import ProTestSession, Shell
+from apte import ApteSession, Shell
 
-session = ProTestSession()
+session = ApteSession()
 
 @session.test()
 async def test_cli():
@@ -284,13 +284,13 @@ async def test_cli():
 **Subprocess output is not captured**
 
 ```python
-# DON'T DO THIS - output not captured by ProTest
+# DON'T DO THIS - output not captured by Apte
 @session.test()
 def test_bad():
     subprocess.run(["my-app"])  # Output goes to terminal, not captured!
 ```
 
-ProTest captures `print()` and `logging`, but subprocess output writes directly to OS file descriptors (fd 1/2), bypassing Python's `sys.stdout`.
+Apte captures `print()` and `logging`, but subprocess output writes directly to OS file descriptors (fd 1/2), bypassing Python's `sys.stdout`.
 
 **Solution: Shell helper**
 
@@ -299,7 +299,7 @@ ProTest captures `print()` and `logging`, but subprocess output writes directly 
 @session.test()
 async def test_good():
     result = await Shell.run("my-app")
-    # stdout/stderr are in result, and auto-printed for ProTest capture
+    # stdout/stderr are in result, and auto-printed for Apte capture
 ```
 
 ### Basic Usage
@@ -370,7 +370,7 @@ async def test_env():
 
 ### Controlling Output Capture
 
-By default, Shell prints stdout/stderr so ProTest can capture it. Disable this if you only need the result:
+By default, Shell prints stdout/stderr so Apte can capture it. Disable this if you only need the result:
 
 ```python
 result = await Shell.run("noisy-command", print_output=False)
@@ -384,7 +384,7 @@ Context manager for capturing and validating warnings raised during test executi
 ### Basic Usage
 
 ```python
-from protest import warns
+from apte import warns
 import warnings
 
 @session.test()

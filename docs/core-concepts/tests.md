@@ -34,7 +34,7 @@ Tests declare their dependencies using type annotations:
 
 ```python
 from typing import Annotated
-from protest import Use, fixture
+from apte import Use, fixture
 
 @fixture
 def database():
@@ -60,7 +60,7 @@ async def test_full_workflow():
 Run only tagged tests:
 
 ```bash
-protest run tests:session --tag integration
+apte run tests:session --tag integration
 ```
 
 ### Tag Inheritance
@@ -71,7 +71,7 @@ Tests inherit tags from:
 2. Fixtures they use (transitively)
 
 ```python
-api_suite = ProTestSuite("API", tags=["api"])
+api_suite = ApteSuite("API", tags=["api"])
 
 @fixture(tags=["database"])
 def db():
@@ -156,7 +156,7 @@ def test_new_feature():
 For advanced use, import the `Skip` dataclass:
 
 ```python
-from protest import Skip
+from apte import Skip
 
 @session.test(skip=Skip(reason="Blocked by #123"))
 def test_blocked():
@@ -169,11 +169,11 @@ def test_blocked():
 
 In pytest, `skipif` conditions are evaluated at import time and don't have access to fixtures. The typical workaround is calling `pytest.skip()` inside the test body, which mixes skip logic with test logic.
 
-ProTest evaluates skip conditions **after** fixture resolution, so your callable receives the actual fixture values:
+Apte evaluates skip conditions **after** fixture resolution, so your callable receives the actual fixture values:
 
 ```python
 from typing import Annotated
-from protest import Use, fixture
+from apte import Use, fixture
 
 @fixture
 def environment():
@@ -192,7 +192,7 @@ def test_local_only(env: Annotated[dict, Use(environment)]):
 
 **How it works:**
 1. Fixtures are resolved for the test
-2. ProTest introspects the skip callable's signature
+2. Apte introspects the skip callable's signature
 3. Matching fixtures are passed as kwargs to the callable
 4. The callable returns `True` (skip) or `False` (run)
 
@@ -201,7 +201,7 @@ def test_local_only(env: Annotated[dict, Use(environment)]):
 For complex conditions:
 
 ```python
-from protest import Skip
+from apte import Skip
 
 @session.test(skip=Skip(
     condition=lambda config: config.get("feature_disabled"),
@@ -248,7 +248,7 @@ def test_reported_issue():
 ### Xfail Object
 
 ```python
-from protest import Xfail
+from apte import Xfail
 
 # strict=True (default): unexpected pass is a failure (XPASS → FAIL)
 @session.test(xfail=Xfail(reason="Flaky", strict=True))
@@ -272,7 +272,7 @@ async def test_flaky_api():
     await call_external_api()
 
 # With delay between retries
-from protest import Retry
+from apte import Retry
 
 @session.test(retry=Retry(times=3, delay=1.0))
 async def test_with_backoff():

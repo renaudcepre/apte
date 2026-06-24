@@ -1,6 +1,6 @@
 # Events
 
-All events emitted during test execution. Events are defined in `protest/events/types.py`.
+All events emitted during test execution. Events are defined in `apte/events/types.py`.
 
 ## Session Lifecycle
 
@@ -123,7 +123,7 @@ SESSION_COMPLETE
 
 ## Data Classes
 
-All defined in `protest/entities/events.py`.
+All defined in `apte/entities/events.py`.
 
 ### TestResult
 

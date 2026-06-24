@@ -1,6 +1,6 @@
 # Filtering System
 
-ProTest supports composable filters: suite, keyword, tag, and last-failed. All filters are plugins that hook into `COLLECTION_FINISH`.
+Apte supports composable filters: suite, keyword, tag, and last-failed. All filters are plugins that hook into `COLLECTION_FINISH`.
 
 ## Filter Chain
 
@@ -32,11 +32,11 @@ Order matters. Selective filters (suite, keyword, tag) run before cache to ensur
 Filters tests by suite path, specified in the target.
 
 ```bash
-protest run demo:session::API           # Suite "API" and children
-protest run demo:session::API::Users    # Suite "API::Users" only
+apte run demo:session::API           # Suite "API" and children
+apte run demo:session::API::Users    # Suite "API::Users" only
 ```
 
-**Implementation**: `protest/filters/suite.py`
+**Implementation**: `apte/filters/suite.py`
 
 ```python
 class SuiteFilterPlugin(PluginBase):
@@ -61,11 +61,11 @@ class SuiteFilterPlugin(PluginBase):
 Filters by substring in test name (including case_ids for parameterized tests).
 
 ```bash
-protest run demo:session -k "login"           # Tests containing "login"
-protest run demo:session -k "login" -k "auth" # OR logic: "login" OR "auth"
+apte run demo:session -k "login"           # Tests containing "login"
+apte run demo:session -k "login" -k "auth" # OR logic: "login" OR "auth"
 ```
 
-**Implementation**: `protest/filters/keyword.py`
+**Implementation**: `apte/filters/keyword.py`
 
 ```python
 class KeywordFilterPlugin(PluginBase):
@@ -91,12 +91,12 @@ class KeywordFilterPlugin(PluginBase):
 Filters by test tags (including inherited tags from fixtures and suites).
 
 ```bash
-protest run demo:session -t database         # Tests with "database" tag
-protest run demo:session -t slow -t unit     # OR: "slow" OR "unit"
-protest run demo:session --no-tag flaky      # Exclude "flaky"
+apte run demo:session -t database         # Tests with "database" tag
+apte run demo:session -t slow -t unit     # OR: "slow" OR "unit"
+apte run demo:session --no-tag flaky      # Exclude "flaky"
 ```
 
-**Implementation**: `protest/tags/plugin.py`
+**Implementation**: `apte/tags/plugin.py`
 
 See [Tags](../core-concepts/tags.md) for tag inheritance rules.
 
@@ -105,11 +105,11 @@ See [Tags](../core-concepts/tags.md) for tag inheritance rules.
 Re-runs only tests that failed in the previous run.
 
 ```bash
-protest run demo:session --lf          # Last-failed tests only
-protest run demo:session --cache-clear # Clear cache first
+apte run demo:session --lf          # Last-failed tests only
+apte run demo:session --cache-clear # Clear cache first
 ```
 
-**Implementation**: `protest/cache/plugin.py`
+**Implementation**: `apte/cache/plugin.py`
 
 Behavior:
 - Empty cache or no failures → all tests run
@@ -122,13 +122,13 @@ All filters compose:
 
 ```bash
 # Suite + keyword
-protest run demo:session::API -k "login"
+apte run demo:session::API -k "login"
 
 # Suite + keyword + tag
-protest run demo:session::API -k "login" -t "slow"
+apte run demo:session::API -k "login" -t "slow"
 
 # Suite + keyword + tag + last-failed
-protest run demo:session::API -k "login" -t "slow" --lf
+apte run demo:session::API -k "login" -t "slow" --lf
 ```
 
 Example reduction:

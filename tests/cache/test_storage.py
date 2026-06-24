@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from protest.cache.storage import CacheStorage, TestCacheEntry
+from apte.cache.storage import CacheStorage, TestCacheEntry
 
 
 @pytest.fixture
 def storage(tmp_path: Path) -> CacheStorage:
     """Create a CacheStorage with a temporary directory."""
-    return CacheStorage(cache_dir=tmp_path / ".protest", cache_file="cache.json")
+    return CacheStorage(cache_dir=tmp_path / ".apte", cache_file="cache.json")
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ class TestCacheStorageBasics:
     @pytest.mark.parametrize(
         "cache_dir,cache_file_name,expected_dir,expected_file_suffix",
         [
-            pytest.param(None, None, ".protest", "cache.json", id="defaults"),
+            pytest.param(None, None, ".apte", "cache.json", id="defaults"),
         ],
     )
     def test_default_paths(
@@ -221,13 +221,13 @@ class TestCacheStorageClear:
 class TestCacheStorageRoundTrip:
     def test_save_then_load_preserves_data(self, tmp_path: Path) -> None:
         """Given results saved to file, when loaded in new storage, then data preserved."""
-        storage1 = CacheStorage(cache_dir=tmp_path / ".protest")
+        storage1 = CacheStorage(cache_dir=tmp_path / ".apte")
         storage1.set_result("test::a", "passed", 1.0)
         storage1.set_result("test::b", "failed", 2.0)
         storage1.set_result("test::c", "error", 3.0)
         storage1.save()
 
-        storage2 = CacheStorage(cache_dir=tmp_path / ".protest")
+        storage2 = CacheStorage(cache_dir=tmp_path / ".apte")
         storage2.load()
 
         assert storage2.get_result("test::a") == TestCacheEntry("passed", 1.0)

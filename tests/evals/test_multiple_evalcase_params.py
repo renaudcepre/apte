@@ -17,11 +17,11 @@ from typing import Annotated, Any
 
 import pytest
 
-from protest import ForEach, From, ProTestSession
-from protest.evals import EvalCase, EvalContext, evaluator
-from protest.evals.suite import EvalSuite
-from protest.evals.wrapper import make_eval_wrapper
-from protest.exceptions import MultipleEvalCaseParamsError
+from apte import ApteSession, ForEach, From
+from apte.evals import EvalCase, EvalContext, evaluator
+from apte.evals.suite import EvalSuite
+from apte.evals.wrapper import make_eval_wrapper
+from apte.exceptions import MultipleEvalCaseParamsError
 
 # Module-level case sources so `get_type_hints()` can resolve Annotated args.
 _cases_a = ForEach([EvalCase(inputs="a", name="a1")])
@@ -44,7 +44,7 @@ def _ok(ctx: EvalContext) -> bool:
 
 class TestSingleEvalCaseParamAccepted:
     def test_one_evalcase_param_via_annotated_from(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         suite = EvalSuite("evals")
 
         @suite.eval()
@@ -56,7 +56,7 @@ class TestSingleEvalCaseParamAccepted:
 
     def test_zero_evalcase_param_accepted(self) -> None:
         """Evals without parametrization (or without EvalCase) are valid."""
-        session = ProTestSession()
+        session = ApteSession()
         suite = EvalSuite("evals")
 
         @suite.eval()
@@ -67,7 +67,7 @@ class TestSingleEvalCaseParamAccepted:
         session.add_suite(suite)  # no raise
 
     def test_subclass_param_accepted_when_alone(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         suite = EvalSuite("evals")
 
         @suite.eval()

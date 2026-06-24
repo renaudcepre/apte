@@ -1,22 +1,22 @@
 # Dependency Injection Internals
 
-ProTest uses explicit, tree-based dependency injection. The scope of a fixture is
+Apte uses explicit, tree-based dependency injection. The scope of a fixture is
 determined by **where** you decorate it, not by an enum parameter.
 
 ## Scope Hierarchy
 
 ```
-ProTestSession
+ApteSession
     │
     ├── Session fixtures (@session.fixture)
     │       └── Cached once, shared across all tests
     │
-    ├── ProTestSuite "API"
+    ├── ApteSuite "API"
     │       │
     │       ├── Suite fixtures (@api_suite.fixture)
     │       │       └── Cached per suite, shared within suite
     │       │
-    │       └── ProTestSuite "API::Users"
+    │       └── ApteSuite "API::Users"
     │               │
     │               └── Suite fixtures (@users_suite.fixture)
     │                       └── Cached for this nested suite
@@ -41,8 +41,8 @@ ProTestSession
 Suites can be nested, and the `full_path` reflects the hierarchy:
 
 ```python
-api_suite = ProTestSuite("API")
-users_suite = ProTestSuite("Users")
+api_suite = ApteSuite("API")
+users_suite = ApteSuite("Users")
 api_suite.add_suite(users_suite)
 
 # users_suite.full_path == "API::Users"
@@ -211,8 +211,8 @@ class FixtureInfo:
 ### Example: Tracking Fixture Durations
 
 ```python
-from protest.plugin import PluginBase
-from protest.entities import FixtureInfo
+from apte.plugin import PluginBase
+from apte.entities import FixtureInfo
 
 
 class FixtureDurationPlugin(PluginBase):

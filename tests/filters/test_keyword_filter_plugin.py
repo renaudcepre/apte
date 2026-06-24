@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from protest.filters import KeywordFilterPlugin
+from apte.filters import KeywordFilterPlugin
 from tests.factories.test_items import make_test_item
 
 

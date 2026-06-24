@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from protest.assertions import ExceptionInfo, RaisesContext, raises
+from apte.assertions import ExceptionInfo, RaisesContext, raises
 
 
 class TestRaisesBasic:

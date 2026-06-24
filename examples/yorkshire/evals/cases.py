@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from protest import ForEach
-from protest.evals import EvalCase
-from protest.evals.evaluators import (
+from apte import ForEach
+from apte.evals import EvalCase
+from apte.evals.evaluators import (
     contains_keywords,
     does_not_contain,
     max_length,

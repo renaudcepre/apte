@@ -1,19 +1,19 @@
-# ProTest
+# Apte
 
 **Async-first testing with explicit dependency injection.**
 
-ProTest is a Python testing framework designed for modern async applications. Instead of implicit fixture resolution by name, ProTest requires you to explicitly declare what each test needs.
+Apte is a Python testing framework designed for modern async applications. Instead of implicit fixture resolution by name, Apte requires you to explicitly declare what each test needs.
 
-## Why ProTest?
+## Why Apte?
 
-ProTest isn't just another test runner. It's built for **modern Python**: typed, async, and explicit.
+Apte isn't just another test runner. It's built for **modern Python**: typed, async, and explicit.
 
 ### Native I/O Concurrency
 
 Tests run as coroutines on a single event loop. Parallel I/O tests without spawning separate processes.
 
 ```bash
-protest run tests:session -n 10
+apte run tests:session -n 10
 ```
 
 ### Explicit Injection (IDE-Ready)
@@ -24,7 +24,7 @@ protest run tests:session -n 10
 # pytest: "db" is resolved by name - requires searching through fixtures
 def test_user(db): ...
 
-# ProTest: Ctrl+Click → Go to definition. Full type inference.
+# Apte: Ctrl+Click → Go to definition. Full type inference.
 def test_user(db: Annotated[Database, Use(database)]): ...
 ```
 
@@ -46,7 +46,7 @@ def test_users(repo: Annotated[Repo, Use(user_repo)]): ...  # Also tagged "datab
 ```
 
 ```bash
-protest run tests:session --no-tag database  # Skips ALL tests touching DB
+apte run tests:session --no-tag database  # Skips ALL tests touching DB
 ```
 
 *No manual tagging. No forgotten markers.*
@@ -71,7 +71,7 @@ No more string-matching that breaks when you rename arguments.
 @pytest.mark.parametrize("code", [200, 201])
 def test_status(code): ...
 
-# ProTest: Rename-safe, IDE-aware, type-checked
+# Apte: Rename-safe, IDE-aware, type-checked
 CODES = ForEach([200, 201])
 
 @session.test()
@@ -90,9 +90,9 @@ Create test data with automatic caching and cleanup. No manual teardown.
 
 ```python
 from typing import Annotated
-from protest import ProTestSession, Use, fixture
+from apte import ApteSession, Use, fixture
 
-session = ProTestSession()
+session = ApteSession()
 
 @fixture
 def database():
@@ -106,7 +106,7 @@ async def test_db_connected(db: Annotated[dict, Use(database)]):
 Run it:
 
 ```bash
-protest run mymodule:session
+apte run mymodule:session
 ```
 
 ## Features
@@ -120,7 +120,7 @@ protest run mymodule:session
 
 ## Getting Started
 
-New to ProTest? Start here:
+New to Apte? Start here:
 
 1. [Installation](getting-started/installation.md)
 2. [Quickstart](getting-started/quickstart.md)

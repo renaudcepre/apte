@@ -1,6 +1,6 @@
 """Yorkshire Terrier Test Session - Entry Point.
 
-Run with: protest run examples.yorkshire.tests.session:session
+Run with: apte run examples.yorkshire.tests.session:session
 
 Structure:
 - Puppies suite (basic tests)
@@ -12,6 +12,7 @@ Structure:
 - CustomFactory suite (@factory(managed=False) demo)
 """
 
+from apte import ApteSession
 from examples.yorkshire.tests.fixtures import (
     configure_kennel_logging,
     kennel,
@@ -25,9 +26,8 @@ from examples.yorkshire.tests.suites.puppies.suite import puppies_suite
 from examples.yorkshire.tests.suites.rate_limited import rate_limited_suite
 from examples.yorkshire.tests.suites.seniors.suite import seniors_suite
 from examples.yorkshire.tests.suites.showcase.suite import showcase_suite
-from protest import ProTestSession
 
-session = ProTestSession(concurrency=4)
+session = ApteSession(concurrency=4)
 session.use(BarkPlugin)
 
 # Bind session fixtures

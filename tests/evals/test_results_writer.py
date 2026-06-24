@@ -13,8 +13,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from protest.evals.results_writer import EvalResultsWriter, _make_run_dir
-from protest.evals.types import EvalCaseResult
+from apte.evals.results_writer import EvalResultsWriter, _make_run_dir
+from apte.evals.types import EvalCaseResult
 
 if TYPE_CHECKING:
     from pathlib import Path

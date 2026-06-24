@@ -3,13 +3,13 @@
 from pathlib import Path
 from typing import Annotated
 
-from protest import ProTestSession, Use, run_session, tmp_path
+from apte import ApteSession, Use, run_session, tmp_path
 
 
 class TestTmpPath:
     def test_tmp_path_provides_path(self) -> None:
         """tmp_path fixture provides a Path object."""
-        session = ProTestSession()
+        session = ApteSession()
         received_path: Path | None = None
 
         @session.test()
@@ -25,7 +25,7 @@ class TestTmpPath:
 
     def test_tmp_path_is_directory(self) -> None:
         """tmp_path fixture provides an existing directory."""
-        session = ProTestSession()
+        session = ApteSession()
         was_directory = False
 
         @session.test()
@@ -40,7 +40,7 @@ class TestTmpPath:
 
     def test_tmp_path_allows_file_operations(self) -> None:
         """Can create and read files in tmp_path."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_file_ops(tmp: Annotated[Path, Use(tmp_path)]) -> None:
@@ -54,7 +54,7 @@ class TestTmpPath:
 
     def test_tmp_path_allows_nested_dirs(self) -> None:
         """Can create nested directories in tmp_path."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_nested(tmp: Annotated[Path, Use(tmp_path)]) -> None:
@@ -68,7 +68,7 @@ class TestTmpPath:
 
     def test_tmp_path_cleaned_up_after_test(self) -> None:
         """tmp_path directory is cleaned up after test completes."""
-        session = ProTestSession()
+        session = ApteSession()
         captured_path: Path | None = None
 
         @session.test()
@@ -85,7 +85,7 @@ class TestTmpPath:
 
     def test_tmp_path_unique_per_test(self) -> None:
         """Each test gets its own tmp_path."""
-        session = ProTestSession()
+        session = ApteSession()
         paths: list[Path] = []
 
         @session.test()

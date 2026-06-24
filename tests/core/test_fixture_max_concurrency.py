@@ -6,12 +6,12 @@ from typing import Annotated
 
 import pytest
 
-from protest import ProTestSession, ProTestSuite
-from protest.core.runner import TestRunner
-from protest.di.container import FixtureContainer
-from protest.di.decorators import factory, fixture, get_fixture_marker
-from protest.di.markers import Use
-from protest.exceptions import InvalidMaxConcurrencyError
+from apte import ApteSession, ApteSuite
+from apte.core.runner import TestRunner
+from apte.di.container import FixtureContainer
+from apte.di.decorators import factory, fixture, get_fixture_marker
+from apte.di.markers import Use
+from apte.exceptions import InvalidMaxConcurrencyError
 
 
 @dataclass
@@ -164,8 +164,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "api_client"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("api_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("api_tests")
         session.add_suite(suite)
         suite.bind(limited_api)
 
@@ -197,8 +197,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "resource"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("serial_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("serial_tests")
         session.add_suite(suite)
         suite.bind(serial_resource)
 
@@ -229,8 +229,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "resource"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=4)
-        suite = ProTestSuite("unlimited_tests")
+        session = ApteSession(concurrency=4)
+        suite = ApteSuite("unlimited_tests")
         session.add_suite(suite)
         suite.bind(unlimited_resource)
 
@@ -262,8 +262,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "resource"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=2)
-        suite = ProTestSuite("capped_tests")
+        session = ApteSession(concurrency=2)
+        suite = ApteSuite("capped_tests")
         session.add_suite(suite)
         suite.bind(wide_fixture)
 
@@ -303,8 +303,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "b"
             await tracker_b.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("multi_fixture_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("multi_fixture_tests")
         session.add_suite(suite)
         suite.bind(fixture_a)
         suite.bind(fixture_b)
@@ -339,8 +339,8 @@ class TestFixtureMaxConcurrencyIntegration:
             raise ValueError("Fixture failed!")
             yield "never_returned"  # type: ignore[misc]
 
-        session = ProTestSession(concurrency=2)
-        suite = ProTestSuite("error_tests")
+        session = ApteSession(concurrency=2)
+        suite = ApteSuite("error_tests")
         session.add_suite(suite)
         suite.bind(failing_fixture)
 
@@ -371,8 +371,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "resource"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("narrow_suite", max_concurrency=2)
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("narrow_suite", max_concurrency=2)
         session.add_suite(suite)
         suite.bind(wide_fixture)
 
@@ -405,8 +405,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield "session_resource"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("session_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("session_tests")
         session.add_suite(suite)
         session.bind(session_limited)  # SESSION scope
 
@@ -443,8 +443,8 @@ class TestFixtureMaxConcurrencyIntegration:
         async def wrapper(res: Annotated[str, Use(rate_limited)]) -> str:
             yield f"wrapped_{res}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("transitive_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("transitive_tests")
         session.add_suite(suite)
         suite.bind(rate_limited)
         suite.bind(wrapper)
@@ -486,8 +486,8 @@ class TestFixtureMaxConcurrencyIntegration:
         async def service_b(api: Annotated[str, Use(shared_api)]) -> str:
             yield f"svc_b_{api}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("diamond_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("diamond_tests")
         session.add_suite(suite)
         suite.bind(shared_api)
         suite.bind(service_a)
@@ -529,8 +529,8 @@ class TestFixtureMaxConcurrencyIntegration:
             yield f"outer_{inner}"
             await tracker_outer.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("multi_limited")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("multi_limited")
         session.add_suite(suite)
         suite.bind(inner_limited)
         suite.bind(outer_limited)
@@ -579,8 +579,8 @@ class TestMaxConcurrencyUnboundFixtures:
             yield "limited"
             await tracker.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("unbound_tests")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("unbound_tests")
         session.add_suite(suite)
         # DO NOT bind unbound_rate_limited - tests use it directly via Use()
 
@@ -639,8 +639,8 @@ class TestMaxConcurrencyUnboundFixtures:
             """Unbound fixture with max_concurrency=30, depends on fixt_b."""
             yield f"c_{b}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("transitive_unbound")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("transitive_unbound")
         session.add_suite(suite)
         # NO fixtures are bound - all used directly via Use()
 
@@ -687,8 +687,8 @@ class TestMaxConcurrencyEffectiveMinimum:
             yield f"b_{a}"
             await tracker_b.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("linear_chain")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("linear_chain")
         session.add_suite(suite)
         suite.bind(fixture_a)
         suite.bind(fixture_b)
@@ -733,8 +733,8 @@ class TestMaxConcurrencyEffectiveMinimum:
         ) -> str:
             yield f"{a}_{b}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("diamond")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("diamond")
         session.add_suite(suite)
         suite.bind(branch_a)
         suite.bind(branch_b)
@@ -778,8 +778,8 @@ class TestMaxConcurrencyEffectiveMinimum:
         ) -> str:
             yield f"test_{sw}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("mixed_scopes")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("mixed_scopes")
         session.add_suite(suite)
         session.bind(session_limited)  # SESSION scope
         suite.bind(suite_wrapper)  # SUITE scope
@@ -824,8 +824,8 @@ class TestMaxConcurrencyEffectiveMinimum:
             yield f"c_{b}"
             await tracker_c.exit()
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("multi_limited")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("multi_limited")
         session.add_suite(suite)
         suite.bind(level_a)
         suite.bind(level_b)
@@ -883,8 +883,8 @@ class TestMaxConcurrencyEffectiveMinimum:
         async def fixt_c(b: Annotated[str, Use(fixt_b)]) -> str:
             yield f"c_{b}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite(f"param_{max_a}_{max_b}_{max_c}")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite(f"param_{max_a}_{max_b}_{max_c}")
         session.add_suite(suite)
         suite.bind(fixt_a)
         suite.bind(fixt_b)
@@ -945,8 +945,8 @@ class TestMaxConcurrencyEffectiveMinimum:
         async def test_fixt(su: Annotated[str, Use(suite_fixt)]) -> str:
             yield f"test_{su}"
 
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite(f"mixed_{max_session}_{max_suite}_{max_test}")
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite(f"mixed_{max_session}_{max_suite}_{max_test}")
         session.add_suite(suite)
         session.bind(session_fixt)  # SESSION scope
         suite.bind(suite_fixt)  # SUITE scope

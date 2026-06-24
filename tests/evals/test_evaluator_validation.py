@@ -13,7 +13,7 @@ from typing import Annotated
 
 import pytest
 
-from protest.evals.evaluator import (
+from apte.evals.evaluator import (
     EvalCase,
     EvalContext,
     Metric,

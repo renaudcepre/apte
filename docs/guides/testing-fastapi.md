@@ -1,10 +1,10 @@
 # Testing a FastAPI App
 
-How to write async integration tests for a FastAPI application using ProTest, httpx, and `asgi-lifespan`.
+How to write async integration tests for a FastAPI application using Apte, httpx, and `asgi-lifespan`.
 
 ## Async Client with Lifespan
 
-FastAPI's `TestClient` is synchronous. For ProTest's async-first approach, `httpx.AsyncClient` with `ASGITransport` is the natural fit - but **httpx does not trigger ASGI lifespan events**.
+FastAPI's `TestClient` is synchronous. For Apte's async-first approach, `httpx.AsyncClient` with `ASGITransport` is the natural fit - but **httpx does not trigger ASGI lifespan events**.
 
 This means if your app uses `@asynccontextmanager` lifespan (the modern FastAPI pattern for startup/shutdown), your app state won't be initialized during tests:
 
@@ -53,9 +53,9 @@ async with LifespanManager(app) as manager:
         resp = await client.get("/users")  # Works!
 ```
 
-## ProTest Fixture
+## Apte Fixture
 
-Wrap this in a ProTest fixture with `yield` for proper setup/teardown:
+Wrap this in a Apte fixture with `yield` for proper setup/teardown:
 
 ```python
 # tests/fixtures.py
@@ -64,7 +64,7 @@ from collections.abc import AsyncIterator
 import httpx
 from asgi_lifespan import LifespanManager
 
-from protest import fixture
+from apte import fixture
 
 from myapp.app import app
 
@@ -139,7 +139,7 @@ from collections.abc import AsyncIterator
 import httpx
 from asgi_lifespan import LifespanManager
 
-from protest import fixture
+from apte import fixture
 
 from myapp.app import app
 
@@ -160,11 +160,11 @@ from typing import Annotated
 
 import httpx
 
-from protest import ProTestSuite, Use
+from apte import ApteSuite, Use
 
 from tests.fixtures import client
 
-books_suite = ProTestSuite("Books", tags=["api"])
+books_suite = ApteSuite("Books", tags=["api"])
 
 
 @books_suite.test()
@@ -195,12 +195,12 @@ async def test_get_nonexistent_book(
 
 ```python
 # tests/session.py
-from protest import ProTestSession
+from apte import ApteSession
 
 from tests.fixtures import client
 from tests.test_books import books_suite
 
-session = ProTestSession(concurrency=4)
+session = ApteSession(concurrency=4)
 session.bind(client)
 session.add_suite(books_suite)
 ```
@@ -208,7 +208,7 @@ session.add_suite(books_suite)
 Run:
 
 ```bash
-protest run tests.session:session
+apte run tests.session:session
 ```
 
 ## Alternative: Manual Lifespan (Without `asgi-lifespan`)
@@ -221,7 +221,7 @@ from collections.abc import AsyncIterator
 
 import httpx
 
-from protest import fixture
+from apte import fixture
 
 from myapp.app import app, lifespan
 
@@ -256,11 +256,11 @@ This works but is non-standard. Prefer `asgi-lifespan` - it handles edge cases (
 
 FastAPI's `TestClient` (from Starlette) is synchronous and uses `requests` under the hood. It handles lifespan automatically, but:
 
-- **Sync-only** - doesn't work with ProTest's async tests
+- **Sync-only** - doesn't work with Apte's async tests
 - **Thread-based** - spawns a background thread for the event loop
-- **No concurrency** - can't benefit from ProTest's parallel execution
+- **No concurrency** - can't benefit from Apte's parallel execution
 
-`httpx.AsyncClient` + `asgi-lifespan` gives you native async testing that composes naturally with ProTest.
+`httpx.AsyncClient` + `asgi-lifespan` gives you native async testing that composes naturally with Apte.
 
 ## See Also
 

@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Annotated
 
 import pytest
 
-from protest import ForEach, ProTestSession, fixture
-from protest.core.runner import TestRunner
-from protest.di.markers import From, Use
-from protest.events.types import Event
+from apte import ApteSession, ForEach, fixture
+from apte.core.runner import TestRunner
+from apte.di.markers import From, Use
+from apte.events.types import Event
 
 if TYPE_CHECKING:
-    from protest.entities import TestResult
+    from apte.entities import TestResult
 
 
 @fixture()
@@ -40,11 +40,11 @@ class TestPEP563Annotations:
     """Tests for PEP 563 stringified annotations support."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
     def test_resolves_module_level_fixture_with_future_annotations(
-        self, session: ProTestSession
+        self, session: ApteSession
     ) -> None:
         """Fixture injection works with `from __future__ import annotations`."""
         captured_values: list[str] = []
@@ -62,7 +62,7 @@ class TestPEP563Annotations:
         assert captured_values == ["resolved_value"]
 
     def test_fixture_error_detected_with_future_annotations(
-        self, session: ProTestSession
+        self, session: ApteSession
     ) -> None:
         """Fixture errors are properly detected with stringified annotations."""
         results: list[TestResult] = []
@@ -83,7 +83,7 @@ class TestPEP563Annotations:
         assert "Fixture error" in str(results[0].error)
 
     def test_from_params_resolved_with_future_annotations(
-        self, session: ProTestSession
+        self, session: ApteSession
     ) -> None:
         """ForEach/From parameterization works with `from __future__ import annotations`."""
         captured_values: list[int] = []
@@ -101,7 +101,7 @@ class TestPEP563Annotations:
         assert sorted(captured_values) == [10, 20, 30]
 
     def test_from_and_use_combined_with_future_annotations(
-        self, session: ProTestSession
+        self, session: ApteSession
     ) -> None:
         """From() + Use() in same test works with `from __future__ import annotations`."""
         captured: list[tuple[str, int]] = []

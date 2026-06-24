@@ -2,7 +2,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from protest.entities import (
+from apte.entities import (
     FixtureInfo,
     FixtureScope,
     HandlerInfo,
@@ -12,7 +12,7 @@ from protest.entities import (
     TestStartInfo,
     format_fixture_scope,
 )
-from protest.events.types import Event
+from apte.events.types import Event
 
 
 class TestTestCounts:

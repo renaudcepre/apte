@@ -17,8 +17,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from protest.di.hints import get_type_hints_compat
-from protest.exceptions import TypeHintResolutionError
+from apte.di.hints import get_type_hints_compat
+from apte.exceptions import TypeHintResolutionError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -61,7 +61,7 @@ class TestSilentInjectionFailureNowLoud:
             """
             from __future__ import annotations
             from typing import TYPE_CHECKING, Annotated
-            from protest import Use
+            from apte import Use
             from inner112 import my_fixture
 
             if TYPE_CHECKING:
@@ -88,8 +88,8 @@ class TestSilentInjectionFailureNowLoud:
             """
             from __future__ import annotations
             from typing import TYPE_CHECKING, Annotated
-            from protest import Use
-            from protest.evals.types import TaskResult
+            from apte import Use
+            from apte.evals.types import TaskResult
             from inner112 import my_fixture
 
             if TYPE_CHECKING:

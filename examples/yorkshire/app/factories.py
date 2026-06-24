@@ -1,7 +1,7 @@
 """Custom factory classes for Yorkshire terriers.
 
 These classes demonstrate the `managed=False` pattern where you define
-your own factory class with custom methods instead of using ProTest's
+your own factory class with custom methods instead of using Apte's
 built-in FixtureFactory wrapper.
 """
 

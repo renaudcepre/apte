@@ -1,8 +1,8 @@
-"""End-to-end tests for ProTest evals integration.
+"""End-to-end tests for Apte evals integration.
 
 These tests define the PUBLIC API contract. They test what the user sees:
-- Session setup (ProTestSession, EvalSuite + @suite.eval with ForEach/From)
-- CLI behavior (protest run vs protest eval)
+- Session setup (ApteSession, EvalSuite + @suite.eval with ForEach/From)
+- CLI behavior (apte run vs apte eval)
 - Output format (scores table, trends, failure messages)
 - History (JSONL format, stats, significance, clean-dirty)
 - Built-in evaluators
@@ -20,13 +20,13 @@ from typing import Annotated, Any
 
 import pytest
 
-from protest import ForEach, From, ProTestSession, Use, fixture
-from protest.api import run_session
-from protest.core.collector import Collector
-from protest.core.runner import TestRunner
-from protest.core.suite import ProTestSuite
-from protest.entities import SuiteKind
-from protest.evals import (
+from apte import ApteSession, ForEach, From, Use, fixture
+from apte.api import run_session
+from apte.core.collector import Collector
+from apte.core.runner import TestRunner
+from apte.core.suite import ApteSuite
+from apte.entities import SuiteKind
+from apte.evals import (
     EvalCase,
     EvalContext,
     Metric,
@@ -35,7 +35,7 @@ from protest.evals import (
     Verdict,
     evaluator,
 )
-from protest.evals.evaluators import (
+from apte.evals.evaluators import (
     contains_expected,
     contains_keywords,
     does_not_contain,
@@ -46,13 +46,13 @@ from protest.evals.evaluators import (
     not_empty,
     word_overlap,
 )
-from protest.evals.hashing import compute_case_hash, compute_eval_hash
-from protest.evals.results_writer import EvalResultsWriter
-from protest.evals.suite import EvalSuite
-from protest.evals.types import EvalSuiteReport  # noqa: TC001 - used at runtime
-from protest.filters.kind import KindFilterPlugin
-from protest.history.storage import append_entry, clean_dirty
-from protest.plugin import PluginBase, PluginContext
+from apte.evals.hashing import compute_case_hash, compute_eval_hash
+from apte.evals.results_writer import EvalResultsWriter
+from apte.evals.suite import EvalSuite
+from apte.evals.types import EvalSuiteReport  # noqa: TC001 - used at runtime
+from apte.filters.kind import KindFilterPlugin
+from apte.history.storage import append_entry, clean_dirty
+from apte.plugin import PluginBase, PluginContext
 
 # ---------------------------------------------------------------------------
 # Fixtures: deterministic evaluators + task
@@ -106,10 +106,10 @@ basic_cases = ForEach(
 
 
 class TestEvalSetup:
-    """Eval setup: ProTestSession + EvalSuite with model=, @suite.eval."""
+    """Eval setup: ApteSession + EvalSuite with model=, @suite.eval."""
 
     def test_add_eval_creates_eval_kind(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -128,12 +128,12 @@ class TestEvalSetup:
         assert suite._model.name == "test-model"
 
     def test_metadata_on_constructor(self) -> None:
-        session = ProTestSession(metadata={"env": "test"})
+        session = ApteSession(metadata={"env": "test"})
         assert session.metadata["env"] == "test"
 
     def test_eval_with_bool_verdict(self) -> None:
         """Evaluator with bool field: case_fail has matches_expected=False -> fail."""
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -149,7 +149,7 @@ class TestEvalSetup:
         assert result.success is False
 
     def test_async_task_works(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -170,7 +170,7 @@ class TestEvalSetup:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -185,7 +185,7 @@ class TestEvalSetup:
 
 
 # ---------------------------------------------------------------------------
-# Kind filtering (protest run vs protest eval)
+# Kind filtering (apte run vs apte eval)
 # ---------------------------------------------------------------------------
 
 
@@ -193,11 +193,11 @@ class TestKindFiltering:
     """Suites have kind, filtering works."""
 
     def test_test_suite_has_kind_test(self) -> None:
-        suite = ProTestSuite("my_tests")
+        suite = ApteSuite("my_tests")
         assert suite.kind == "test"
 
     def test_eval_suite_has_kind_eval(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -209,10 +209,10 @@ class TestKindFiltering:
         assert any(s.kind == "eval" for s in session._suites)
 
     def test_kind_filter_keeps_only_matching(self) -> None:
-        test_suite = ProTestSuite("tests")
-        eval_suite = ProTestSuite("evals", kind=SuiteKind.EVAL)
+        test_suite = ApteSuite("tests")
+        eval_suite = ApteSuite("evals", kind=SuiteKind.EVAL)
 
-        session = ProTestSession()
+        session = ApteSession()
 
         @test_suite.test()
         def test_one() -> None:
@@ -235,10 +235,10 @@ class TestKindFiltering:
         assert filtered[0].suite.kind == "eval"
 
     def test_unified_session_runs_tests_only(self) -> None:
-        """protest run behavior: only kind=test suites."""
-        session = ProTestSession()
+        """apte run behavior: only kind=test suites."""
+        session = ApteSession()
 
-        test_suite = ProTestSuite("unit")
+        test_suite = ApteSuite("unit")
         results: list[str] = []
 
         @test_suite.test()
@@ -260,10 +260,10 @@ class TestKindFiltering:
         assert "test" in results
 
     def test_unified_session_runs_evals_only(self) -> None:
-        """protest eval behavior: only kind=eval suites."""
-        session = ProTestSession()
+        """apte eval behavior: only kind=eval suites."""
+        session = ApteSession()
 
-        test_suite = ProTestSuite("unit")
+        test_suite = ApteSuite("unit")
         test_ran = []
 
         @test_suite.test()
@@ -294,7 +294,7 @@ class TestEvalOutput:
     """What the user sees in the terminal.
 
     These tests verify output by reading the EvalPlugin report directly,
-    since ProTest captures stdout during test runs.
+    since Apte captures stdout during test runs.
     """
 
     def test_report_contains_score_stats(self) -> None:
@@ -307,7 +307,7 @@ class TestEvalOutput:
             def on_eval_suite_end(self, report: Any) -> None:
                 reports.append(report)
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(ReportCapture())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -335,7 +335,7 @@ class TestEvalOutput:
             def on_eval_suite_end(self, report: Any) -> None:
                 reports.append(report)
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(ReportCapture())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -362,7 +362,7 @@ class TestEvalOutput:
                 if result.error:
                     errors.append(str(result.error))
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(ErrorCollector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -398,7 +398,7 @@ class TestEvalPayloadFlow:
             def on_test_fail(self, result: Any) -> None:
                 collected.append(result)
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Collector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -433,7 +433,7 @@ class TestEvalPayloadFlow:
             def on_test_teardown_start(self, info: Any) -> None:
                 teardown_ids.append(info.node_id)
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(LifecycleCollector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -473,7 +473,7 @@ class TestEvalPayloadFlow:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Collector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -499,7 +499,7 @@ class TestEvalPayloadFlow:
             def on_test_pass(self, result: Any) -> None:
                 collected.append(result)
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Collector())
 
         @session.test()
@@ -523,7 +523,7 @@ class TestHistory:
     """JSONL history format and querying."""
 
     def _run_eval(self, tmp_path: Path) -> None:
-        session = ProTestSession(history_dir=tmp_path)
+        session = ApteSession(history_dir=tmp_path)
 
         eval_echo_suite = EvalSuite("eval_echo", model=ModelLabel(name="test-model"))
         session.add_suite(eval_echo_suite)
@@ -567,7 +567,7 @@ class TestHistory:
         assert "cases" in suite
 
     def test_history_test_run_has_null_evals(self, tmp_path: Path) -> None:
-        session = ProTestSession(history=True, history_dir=tmp_path)
+        session = ApteSession(history=True, history_dir=tmp_path)
 
         @session.test()
         def test_simple() -> None:
@@ -586,7 +586,7 @@ class TestHistory:
         assert len(lines) == 2
 
     def test_history_metadata_included(self, tmp_path: Path) -> None:
-        session = ProTestSession(
+        session = ApteSession(
             history_dir=tmp_path,
             metadata={"env": "test", "version": "1.0"},
         )
@@ -656,7 +656,7 @@ class TestCaseHashing:
 
     def test_case_hash_stored_in_history(self, tmp_path: Path) -> None:
         """History entries include case_hash and eval_hash per case."""
-        session = ProTestSession(history_dir=tmp_path)
+        session = ApteSession(history_dir=tmp_path)
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -704,7 +704,7 @@ class TestCaseHashing:
 
 
 class TestBuiltinEvaluators:
-    """All built-in evaluators work correctly through protest-native API."""
+    """All built-in evaluators work correctly through apte-native API."""
 
     def _make_ctx(self, output: str, expected: str | None = None) -> EvalContext:
         """Minimal EvalContext for evaluator testing."""
@@ -909,7 +909,7 @@ class TestScoringV2:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Collector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -946,7 +946,7 @@ class TestScoringV2:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Collector())
 
         eval_echo_suite = EvalSuite("eval_echo")
@@ -1016,7 +1016,7 @@ class TestShortCircuit:
             call_log.append("expensive")
             return True
 
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -1049,7 +1049,7 @@ class TestShortCircuit:
         single = ForEach(
             [EvalCase(inputs="x", expected="x", name="c1")], ids=lambda c: c.name
         )
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -1071,11 +1071,11 @@ class TestShortCircuit:
 
 
 class TestResultsFiles:
-    """Per-case markdown files written to .protest/results/<suite>_<ts>/."""
+    """Per-case markdown files written to .apte/results/<suite>_<ts>/."""
 
     def _run_eval(self, tmp_path: Path) -> Path:
         results_dir = tmp_path / "results"
-        session = ProTestSession()
+        session = ApteSession()
         writer = EvalResultsWriter(history_dir=tmp_path)
         session.register_plugin(writer)
 
@@ -1147,7 +1147,7 @@ class TestMultiDatasetHistory:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession(history_dir=tmp_path)
+        session = ApteSession(history_dir=tmp_path)
 
         pipeline_suite = EvalSuite("pipeline")
         session.add_suite(pipeline_suite)
@@ -1185,12 +1185,12 @@ class TestMultiDatasetHistory:
 
 
 class TestEvalTaskFixtures:
-    """EvalSuite + @suite.eval() peut utiliser des fixtures protest via Use()."""
+    """EvalSuite + @suite.eval() peut utiliser des fixtures apte via Use()."""
 
     def test_task_without_fixtures_still_works(self) -> None:
         # basic_cases has one match (case_pass) and one mismatch (case_fail)
         # fake_accuracy returns matches_expected=False for case_fail -> fail
-        session = ProTestSession()
+        session = ApteSession()
 
         eval_echo_suite = EvalSuite("eval_echo")
         session.add_suite(eval_echo_suite)
@@ -1217,7 +1217,7 @@ class TestEvalTaskFixtures:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
         session.bind(prefix_service)
 
         eval_prefixed_suite = EvalSuite("eval_prefixed")
@@ -1255,7 +1255,7 @@ class TestEvalTaskFixtures:
             ids=lambda c: c.name,
         )
 
-        session = ProTestSession()
+        session = ApteSession()
         session.bind(expensive_resource)
 
         eval_resource_suite = EvalSuite("eval_resource")

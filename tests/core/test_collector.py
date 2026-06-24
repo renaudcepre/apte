@@ -2,17 +2,17 @@
 
 from typing import Annotated
 
-from protest import Use
-from protest.core.collector import (
+from apte import Use
+from apte.core.collector import (
     Collector,
     TestItem,
     chunk_by_suite,
     get_last_chunk_index_per_suite,
 )
-from protest.core.session import ProTestSession
-from protest.core.suite import ProTestSuite
-from protest.di.decorators import fixture
-from protest.entities import SuitePath
+from apte.core.session import ApteSession
+from apte.core.suite import ApteSuite
+from apte.di.decorators import fixture
+from apte.entities import SuitePath
 
 
 class TestTestItemNodeId:
@@ -30,7 +30,7 @@ class TestTestItemNodeId:
 
     def test_node_id_with_suite(self) -> None:
         """Node ID for suite test: module.path::Suite::test"""
-        suite = ProTestSuite("MySuite")
+        suite = ApteSuite("MySuite")
 
         def my_test() -> None:
             pass
@@ -55,7 +55,7 @@ class TestCollector:
 
     def test_collect_empty_session(self) -> None:
         """Empty session produces empty list."""
-        session = ProTestSession()
+        session = ApteSession()
         collector = Collector()
 
         items = collector.collect(session)
@@ -64,7 +64,7 @@ class TestCollector:
 
     def test_collect_standalone_tests(self) -> None:
         """Collects standalone tests from session."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_one() -> None:
@@ -86,8 +86,8 @@ class TestCollector:
 
     def test_collect_suite_tests(self) -> None:
         """Collects tests from suites."""
-        session = ProTestSession()
-        suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        suite = ApteSuite("my_suite")
         session.add_suite(suite)
 
         @suite.test()
@@ -105,8 +105,8 @@ class TestCollector:
 
     def test_collect_mixed_tests(self) -> None:
         """Collects both standalone and suite tests."""
-        session = ProTestSession()
-        suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        suite = ApteSuite("my_suite")
         session.add_suite(suite)
 
         @session.test()
@@ -127,8 +127,8 @@ class TestCollector:
 
     def test_collect_generates_correct_node_ids(self) -> None:
         """Collected items have correct node_ids."""
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @session.test()
@@ -158,7 +158,7 @@ class TestChunkBySuite:
 
     def test_chunk_single_suite(self) -> None:
         """All tests from same suite in one chunk."""
-        suite = ProTestSuite("Suite")
+        suite = ApteSuite("Suite")
 
         def test_a() -> None:
             pass
@@ -201,8 +201,8 @@ class TestChunkBySuite:
 
     def test_chunk_alternating_suites(self) -> None:
         """Contiguous tests by suite, not merged if interleaved."""
-        suite_a = ProTestSuite("A")
-        suite_b = ProTestSuite("B")
+        suite_a = ApteSuite("A")
+        suite_b = ApteSuite("B")
 
         def test_a() -> None:
             pass
@@ -229,7 +229,7 @@ class TestChunkBySuite:
 
     def test_chunk_standalone_then_suite(self) -> None:
         """Standalone tests followed by suite tests create separate chunks."""
-        suite_s = ProTestSuite("S")
+        suite_s = ApteSuite("S")
 
         def test_a() -> None:
             pass
@@ -261,7 +261,7 @@ class TestGetLastChunkIndexPerSuite:
 
     def test_single_suite_single_chunk(self) -> None:
         """Single suite in one chunk."""
-        suite_s = ProTestSuite("S")
+        suite_s = ApteSuite("S")
 
         def test_a() -> None:
             pass
@@ -276,8 +276,8 @@ class TestGetLastChunkIndexPerSuite:
 
     def test_suite_split_across_chunks(self) -> None:
         """Suite appearing in multiple chunks tracks last occurrence."""
-        suite_a = ProTestSuite("A")
-        suite_b = ProTestSuite("B")
+        suite_a = ApteSuite("A")
+        suite_b = ApteSuite("B")
 
         def test_a() -> None:
             pass
@@ -314,7 +314,7 @@ class TestGetLastChunkIndexPerSuite:
 
     def test_mixed_standalone_and_suite(self) -> None:
         """Only tracks suites, not standalone tests."""
-        suite_s = ProTestSuite("S")
+        suite_s = ApteSuite("S")
 
         def test_a() -> None:
             pass
@@ -333,10 +333,10 @@ class TestGetLastChunkIndexPerSuite:
 
     def test_nested_suites_updates_parent_indices(self) -> None:
         """Parent suite index is updated when child chunks appear."""
-        api_suite = ProTestSuite("API")
-        users_suite = ProTestSuite("Users")
-        perms_suite = ProTestSuite("Perms")
-        orders_suite = ProTestSuite("Orders")
+        api_suite = ApteSuite("API")
+        users_suite = ApteSuite("Users")
+        perms_suite = ApteSuite("Perms")
+        orders_suite = ApteSuite("Orders")
 
         api_suite.add_suite(users_suite)
         users_suite.add_suite(perms_suite)
@@ -387,7 +387,7 @@ class TestTransitiveFixtureTags:
 
         D's tags should be collected exactly once via the visited set.
         """
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["database"])
         def shared_fixture() -> str:
@@ -432,7 +432,7 @@ class TestTransitiveFixtureTags:
 
     def test_deep_transitive_tags_propagation(self) -> None:
         """Tags propagate through multiple levels of fixture dependencies."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["level3"])
         def deep_fixture() -> str:
@@ -477,7 +477,7 @@ class TestUnboundFixtureTags:
         via Use() but not explicitly bound should still have their tags
         propagated to tests using them.
         """
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["database"])
         def unbound_fixture() -> str:
@@ -507,7 +507,7 @@ class TestUnboundFixtureTags:
         unbound_a (tags=["db"]) ← unbound_b (tags=["api"]) ← test
         Expected: test has both "db" and "api" tags.
         """
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["db"])
         def unbound_a() -> str:
@@ -537,7 +537,7 @@ class TestUnboundFixtureTags:
 
         bound_fixture (tags=["bound"], bound) ← unbound_fixture (tags=["unbound"]) ← test
         """
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["bound"])
         def bound_fixture() -> str:
@@ -564,8 +564,8 @@ class TestUnboundFixtureTags:
 
     def test_mixed_scopes_session_suite_unbound(self) -> None:
         """Tags propagate through SESSION → SUITE → TEST(unbound) chain."""
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @fixture(tags=["session"])
@@ -600,7 +600,7 @@ class TestUnboundFixtureTags:
 
     def test_diamond_with_unbound_fixtures(self) -> None:
         """Diamond pattern with unbound fixtures: tags from all branches collected."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["shared"])
         def shared() -> str:

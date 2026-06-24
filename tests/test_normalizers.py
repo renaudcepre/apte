@@ -1,6 +1,6 @@
 """Tests for normalization functions."""
 
-from protest.entities import (
+from apte.entities import (
     Retry,
     Skip,
     Xfail,

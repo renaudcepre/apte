@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-from protest import ProTestSession, Use
-from protest.core.runner import TestRunner
-from protest.di.decorators import factory, fixture
-from protest.plugin import PluginBase
+from apte import ApteSession, Use
+from apte.core.runner import TestRunner
+from apte.di.decorators import factory, fixture
+from apte.plugin import PluginBase
 from tests.conftest import CollectedEvents
 
 
@@ -41,7 +41,7 @@ class TestUnmanagedFactoryBasic:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory(managed=False)
@@ -75,7 +75,7 @@ class TestUnmanagedFactoryErrorHandling:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory(managed=False)
@@ -106,7 +106,7 @@ class TestUnmanagedFactoryErrorHandling:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory(managed=False)
@@ -139,7 +139,7 @@ class TestUnmanagedFactoryWithDependencies:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @fixture()
@@ -176,7 +176,7 @@ class TestUnmanagedFactoryWithTeardown:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         teardown_called = []

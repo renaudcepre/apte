@@ -2,8 +2,8 @@
 
 import pytest
 
-from protest.di.proxy import FixtureErrorWrapper
-from protest.exceptions import FixtureError
+from apte.di.proxy import FixtureErrorWrapper
+from apte.exceptions import FixtureError
 
 
 class FakeUserFactory:

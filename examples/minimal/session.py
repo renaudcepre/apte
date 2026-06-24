@@ -3,9 +3,9 @@
 from collections.abc import Generator
 from typing import Annotated
 
-from protest import ProTestSession, ProTestSuite, Use, fixture
+from apte import ApteSession, ApteSuite, Use, fixture
 
-session = ProTestSession()
+session = ApteSession()
 
 
 # =============================================================================
@@ -25,7 +25,7 @@ session.bind(session_db)
 # SUITE
 # =============================================================================
 
-my_suite = ProTestSuite("MySuite")
+my_suite = ApteSuite("MySuite")
 session.add_suite(my_suite)
 
 

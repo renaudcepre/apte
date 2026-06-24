@@ -1,17 +1,17 @@
-# justfile for ProTest development
+# justfile for Apte development
 @default:
-    echo "Hi ! Welcome to ProTest !"
+    echo "Hi ! Welcome to Apte !"
     just --list
 
 # Run all linting and formatting
 @lint:
     ruff format .
     ruff check --fix .
-    uv run mypy protest
+    uv run mypy apte
 
 @fullcheck:
   ruff format --check . && ruff check .  # lint
-  mypy --strict protest                  # types
+  mypy --strict apte                  # types
   uv run pytest -vv                      # tests
 
 # Run tests with verbose output
@@ -20,11 +20,11 @@
 
 # Run tests with coverage
 @test-cov *options="":
-    uv run pytest -vv --cov=protest --cov-report=term {{ options }}
+    uv run pytest -vv --cov=apte --cov-report=term {{ options }}
 
 # Run tests with coverage and open browser
 @test-cov-open *options="":
-    uv run pytest -vv --cov=protest --cov-report=html {{ options }}
+    uv run pytest -vv --cov=apte --cov-report=html {{ options }}
     python -m webbrowser htmlcov/index.html
 
 # Development setup

@@ -1,21 +1,18 @@
 """Feature showcase - ForEach, mocker, caplog, raises, warns, Retry.
 
-This module demonstrates advanced ProTest features in one place.
+This module demonstrates advanced Apte features in one place.
 """
 
 import asyncio
 import warnings
 from typing import Annotated
 
-from examples.yorkshire.app.domain import Coat, Job, Size, Yorkshire
-from examples.yorkshire.app.services import GroomingService, VetService
-from examples.yorkshire.tests.fixtures import grooming_quote, yorkshire
-from protest import (
+from apte import (
+    ApteSuite,
     FixtureFactory,
     ForEach,
     From,
     Mocker,
-    ProTestSuite,
     Retry,
     Skip,
     Use,
@@ -25,9 +22,12 @@ from protest import (
     raises,
     warns,
 )
-from protest.entities import LogCapture
+from apte.entities import LogCapture
+from examples.yorkshire.app.domain import Coat, Job, Size, Yorkshire
+from examples.yorkshire.app.services import GroomingService, VetService
+from examples.yorkshire.tests.fixtures import grooming_quote, yorkshire
 
-showcase_suite = ProTestSuite(
+showcase_suite = ApteSuite(
     "Showcase",
     tags=["showcase"],
     description="Feature demonstrations: ForEach, mocker, caplog, raises, warns, Retry",

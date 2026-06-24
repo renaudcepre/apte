@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from protest.entities import SessionResult, TestResult, TestStartInfo, TestTeardownInfo
-from protest.events.types import Event
-from protest.reporting.web import (
+from apte.entities import SessionResult, TestResult, TestStartInfo, TestTeardownInfo
+from apte.events.types import Event
+from apte.reporting.web import (
     DEFAULT_PORT,
     WebReporter,
     _format_traceback,
@@ -49,7 +49,7 @@ class TestProcessRequest:
     def test_index_path_returns_html(self) -> None:
         request = MagicMock()
         request.path = "/"
-        with patch("protest.reporting.web.ASSETS_DIR") as mock_dir:
+        with patch("apte.reporting.web.ASSETS_DIR") as mock_dir:
             mock_html = MagicMock()
             mock_html.exists.return_value = True
             mock_html.read_bytes.return_value = b"<html>test</html>"
@@ -285,7 +285,7 @@ class TestWebReporterOnCollectionFinish:
             make_test_item("test_two", suite=None),
         ]
 
-        with patch("protest.reporting.web.ws_connect") as mock_connect:
+        with patch("apte.reporting.web.ws_connect") as mock_connect:
             mock_ws = MagicMock()
             mock_connect.return_value = mock_ws
 
@@ -300,7 +300,7 @@ class TestWebReporterOnCollectionFinish:
         reporter = WebReporter(port=9999)
         items = [make_test_item("test_one", suite=None)]
 
-        with patch("protest.reporting.web.ws_connect") as mock_connect:
+        with patch("apte.reporting.web.ws_connect") as mock_connect:
             mock_connect.side_effect = Exception("Connection refused")
 
             with pytest.warns(UserWarning, match="Cannot connect to live server"):
@@ -314,7 +314,7 @@ class TestWebReporterOnCollectionFinish:
         reporter.set_target("mymodule:session")
         items = [make_test_item("test_foo", suite=None)]
 
-        with patch("protest.reporting.web.ws_connect") as mock_connect:
+        with patch("apte.reporting.web.ws_connect") as mock_connect:
             mock_ws = MagicMock()
             mock_connect.return_value = mock_ws
 

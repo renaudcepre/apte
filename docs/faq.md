@@ -2,7 +2,7 @@
 
 ## Why no test classes?
 
-ProTest doesn't support test classes. Use suites instead.
+Apte doesn't support test classes. Use suites instead.
 
 **pytest:**
 
@@ -20,13 +20,13 @@ class TestUser:
         assert user.deleted
 ```
 
-**ProTest:**
+**Apte:**
 
 ```python
-from protest import ProTestSuite, fixture, Use
+from apte import ApteSuite, fixture, Use
 from typing import Annotated
 
-user_suite = ProTestSuite("User")
+user_suite = ApteSuite("User")
 
 
 @fixture
@@ -49,7 +49,7 @@ def test_delete(u: Annotated[User, Use(user)]):
 
 ### What classes provide vs suites
 
-| Feature                | pytest classes                   | ProTest suites      |
+| Feature                | pytest classes                   | Apte suites      |
 |------------------------|----------------------------------|---------------------|
 | Group related tests    | ✓                                | ✓                   |
 | Shared fixtures        | `self` or class-scoped fixtures  | `suite.bind(fn)`    |
@@ -62,7 +62,7 @@ def test_delete(u: Annotated[User, Use(user)]):
 Test inheritance creates implicit behavior that's hard to trace. When a test fails in a subclass, you need to check the
 parent class, grandparent class, and any mixins to understand what's happening.
 
-ProTest favors explicit composition: if two suites need the same fixtures, import and use them explicitly.
+Apte favors explicit composition: if two suites need the same fixtures, import and use them explicitly.
 
 ```python
 from myapp.fixtures import database, user
@@ -127,18 +127,18 @@ def test_perms(
     # You SEE it's 3×2×4 = 24 tests
 ```
 
-## Why doesn't ProTest capture subprocess output automatically?
+## Why doesn't Apte capture subprocess output automatically?
 
-ProTest captures `print()` and `logging` automatically, but subprocess output goes directly to OS file descriptors (fd
+Apte captures `print()` and `logging` automatically, but subprocess output goes directly to OS file descriptors (fd
 1/2), bypassing Python's `sys.stdout`.
 
-In ProTest's async-concurrent architecture, all tests run in the same process sharing the same file descriptors. There's
+In Apte's async-concurrent architecture, all tests run in the same process sharing the same file descriptors. There's
 no way to attribute subprocess output to a specific test when multiple tests run concurrently.
 
 **Solution: use the `Shell` helper**
 
 ```python
-from protest import Shell
+from apte import Shell
 
 
 @suite.test()
@@ -151,7 +151,7 @@ async def test_ffmpeg_conversion() -> None:
 
 The `Shell` helper:
 - Runs subprocesses with isolated pipes (no fd sharing issues)
-- Automatically prints output for ProTest to capture
+- Automatically prints output for Apte to capture
 - Works safely with concurrent tests (`-n 4`)
 - Supports timeout, working directory, environment variables
 
