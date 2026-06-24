@@ -62,7 +62,10 @@ from __future__ import annotations
 import contextlib
 import inspect
 import re
-from typing import Any, get_type_hints
+from typing import Annotated, Any, get_args, get_origin, get_type_hints
+
+from protest.di.markers import From, Use
+from protest.exceptions import TypeHintResolutionError
 
 
 def get_type_hints_compat(func: Any) -> dict[str, Any]:
@@ -103,16 +106,58 @@ def _get_type_hints_substituting_any(
     ``Any`` is only used as a placeholder so resolution can complete; the
     DI system reads the ``Use(...)``/``From(...)`` marker out of the
     ``Annotated[...]``, not the underlying type.
+
+    If resolution still can't complete and the signature has a parameter
+    carrying a ``Use(...)``/``From(...)`` marker, raise
+    ``TypeHintResolutionError``: dropping the hints there would silently
+    disable that injection, so we fail loud and point at the culprit. With
+    no DI marker at stake (e.g. only an unresolvable return annotation),
+    keep degrading to ``{}`` - nothing is silently lost.
     """
     localns = dict(localns)
+    last_error: Exception | None = None
     for _ in range(20):
         try:
             return get_type_hints(func, localns=localns, include_extras=True)
         except NameError as exc:
+            last_error = exc
             match = re.search(r"name '(\w+)' is not defined", str(exc))
             if not match:
                 break
             localns[match.group(1)] = Any
-        except Exception:
+        except Exception as exc:
+            last_error = exc
             break
+    if last_error is not None and _has_di_marker_param(func):
+        raise TypeHintResolutionError(
+            getattr(func, "__name__", repr(func)),
+            getattr(func, "__annotations__", {}),
+            last_error,
+        )
     return {}
+
+
+def _has_di_marker_param(func: Any) -> bool:
+    """True if any non-return parameter carries a Use/From marker.
+
+    Handles both stringified annotations (PEP 563 - substring match on the
+    raw string) and live ``Annotated[...]`` objects (inspect the metadata).
+    Used to decide whether an unresolvable signature would silently disable
+    injection.
+    """
+    try:
+        params = inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return False
+    for param in params.values():
+        ann = param.annotation
+        if ann is inspect.Parameter.empty:
+            continue
+        if isinstance(ann, str):
+            if "Use(" in ann or "From(" in ann:
+                return True
+        elif get_origin(ann) is Annotated and any(
+            isinstance(meta, (Use, From)) for meta in get_args(ann)[1:]
+        ):
+            return True
+    return False

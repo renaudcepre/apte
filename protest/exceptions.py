@@ -44,6 +44,34 @@ class FixtureNotFoundError(ProTestError):
         super().__init__(f"Fixture '{fixture_name}' is not registered.")
 
 
+class TypeHintResolutionError(ProTestError):
+    """Raised when a function's type hints can't be resolved at runtime and
+    that failure would silently disable dependency injection.
+
+    DI reads the ``Use(...)``/``From(...)`` markers out of resolved type
+    hints. ``get_type_hints`` resolves the whole signature atomically, so a
+    single unresolvable name anywhere - typically a return annotation whose
+    inner type is imported only under ``if TYPE_CHECKING:`` - drops every
+    hint, markers included, and injection would silently inject nothing.
+    Raising points at the culprit instead of degrading silently.
+    """
+
+    def __init__(
+        self, func_name: str, annotations: dict[str, object], original: Exception
+    ):
+        self.func_name = func_name
+        self.original = original
+        rendered = ", ".join(f"{k}: {v!r}" for k, v in annotations.items())
+        super().__init__(
+            f"Could not resolve type hints for '{func_name}' ({original}). "
+            f"A type referenced in its signature is not importable at runtime "
+            f"- is it imported only under `if TYPE_CHECKING:`? It must be "
+            f"importable at runtime (module level, not TYPE_CHECKING) for "
+            f"dependency injection to resolve the Use(...)/From(...) markers; "
+            f"otherwise injection silently does nothing. Annotations: {rendered}"
+        )
+
+
 class ParameterizedFixtureError(ProTestError):
     def __init__(self, fixture_name: str, param_names: list[str]):
         params = ", ".join(param_names)
