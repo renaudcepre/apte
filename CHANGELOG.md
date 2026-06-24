@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/renaudcepre/apte/compare/apte-v0.2.0...apte-v0.3.0) (2026-06-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **rename:** rename protest to apte ([#135](https://github.com/renaudcepre/apte/issues/135))
+* **evals:** evaluator functions must declare a return annotation of bool or a dataclass, resolvable at runtime from module scope.
+
+### Features
+
+* **evals:** namespace dataclass scores per evaluator ([#115](https://github.com/renaudcepre/apte/issues/115)) ([3cec018](https://github.com/renaudcepre/apte/commit/3cec01870f903dd0497c15c10741968786643e76))
+
+
+### Bug Fixes
+
+* **assets:** replace vectorized protest wordmark with apte in logos ([#138](https://github.com/renaudcepre/apte/issues/138)) ([818fdef](https://github.com/renaudcepre/apte/commit/818fdef8744a4baa48f63383d93fb8e755f28749))
+* **evals:** contains_expected and word_overlap raise when expected is None ([#123](https://github.com/renaudcepre/apte/issues/123)) ([8f740c6](https://github.com/renaudcepre/apte/commit/8f740c60e722c946170eccc875832beb3eaf5a22))
+* **evals:** fail loud when an eval case has zero evaluators ([#122](https://github.com/renaudcepre/apte/issues/122)) ([63d5ea7](https://github.com/renaudcepre/apte/commit/63d5ea745206fc872bced4f1f86440f0c2f9d6e5))
+
+
+### Miscellaneous Chores
+
+* **rename:** rename protest to apte ([#135](https://github.com/renaudcepre/apte/issues/135)) ([b3ccd6f](https://github.com/renaudcepre/apte/commit/b3ccd6fc0a7b0fc96fe9b87b41877685974deabf))
+
 ## [0.2.0](https://github.com/renaudcepre/apte/compare/apte-v0.1.2...apte-v0.2.0) (2026-05-31)
 
 
