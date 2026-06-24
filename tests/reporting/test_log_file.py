@@ -1,4 +1,4 @@
-"""Tests for LogFilePlugin - writes logging and stdout to .protest/"""
+"""Tests for LogFilePlugin - writes logging and stdout to .apte/"""
 
 from __future__ import annotations
 
@@ -7,17 +7,17 @@ import re
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
-from protest.entities import SessionResult
+from apte.entities import SessionResult
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-from protest.reporting.log_file import LogFilePlugin
+from apte.reporting.log_file import LogFilePlugin
 
 
 class TestLogFilePluginSetup:
     def test_creates_log_directory(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
 
@@ -27,7 +27,7 @@ class TestLogFilePluginSetup:
         plugin.on_session_complete(SessionResult(passed=0, failed=0, duration=0))
 
     def test_creates_log_and_stdout_files(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
 
@@ -38,7 +38,7 @@ class TestLogFilePluginSetup:
         plugin.on_session_complete(SessionResult(passed=0, failed=0, duration=0))
 
     def test_writes_header_on_setup(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
 
@@ -47,13 +47,13 @@ class TestLogFilePluginSetup:
 
         log_content = (log_dir / "last_run.log").read_text()
         stdout_content = (log_dir / "last_run_stdout").read_text()
-        assert "ProTest Log" in log_content
-        assert "ProTest Stdout" in stdout_content
+        assert "Apte Log" in log_content
+        assert "Apte Stdout" in stdout_content
 
 
 class TestLogFilePluginCallbacks:
     def test_on_log_writes_to_file(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -76,7 +76,7 @@ class TestLogFilePluginCallbacks:
         assert "Test log message" in log_content
 
     def test_on_stdout_writes_to_file(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -89,7 +89,7 @@ class TestLogFilePluginCallbacks:
         assert "Test stdout output" in stdout_content
 
     def test_on_stdout_ignores_empty_data(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -104,7 +104,7 @@ class TestLogFilePluginCallbacks:
         assert len(lines) == 0
 
     def test_on_stdout_handles_multiline_data(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -137,7 +137,7 @@ class TestLogFilePluginExtractTestId:
 
 class TestLogFilePluginLifecycle:
     def test_closes_files_on_session_complete(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -151,7 +151,7 @@ class TestLogFilePluginLifecycle:
         assert plugin._stdout_handle is None
 
     def test_files_are_readable_after_complete(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)
@@ -174,7 +174,7 @@ class TestLogFilePluginLifecycle:
 
 class TestLogFilePluginTimestamps:
     def test_log_timestamp_format(self, tmp_path: Path) -> None:
-        log_dir = tmp_path / ".protest"
+        log_dir = tmp_path / ".apte"
         plugin = LogFilePlugin(log_dir=log_dir)
         session = MagicMock()
         plugin.setup(session)

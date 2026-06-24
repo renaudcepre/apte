@@ -9,35 +9,35 @@ if TYPE_CHECKING:
 
 
 class TestRunBasic:
-    def test_run_passing_session(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "simple_session:session")
+    def test_run_passing_session(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "simple_session:session")
         result.assert_success()
         result.assert_output_contains("passed")
 
-    def test_run_failing_session(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "failing_session:session")
+    def test_run_failing_session(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "failing_session:session")
         result.assert_failure()
         result.assert_output_contains("failed")
 
-    def test_run_collect_only(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "simple_session:session", "--collect-only")
+    def test_run_collect_only(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "simple_session:session", "--collect-only")
         result.assert_success()
         result.assert_output_contains("test_passing")
         result.assert_output_contains("test_also_passing")
 
 
 class TestRunConcurrency:
-    def test_run_with_concurrency(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "parallel_session:session", "-n", "3")
+    def test_run_with_concurrency(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "parallel_session:session", "-n", "3")
         result.assert_success()
         assert "3/3 passed" in result.stdout
 
 
 class TestRunExitFirst:
     def test_exitfirst_stops_on_first_failure(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        result = run_protest("run", "multi_fail_session:session", "-x")
+        result = run_apte("run", "multi_fail_session:session", "-x")
         result.assert_failure()
         assert "0/1" in result.stdout, (
             f"Expected only 1 test run with -x, got: {result.stdout}"
@@ -45,39 +45,39 @@ class TestRunExitFirst:
 
 
 class TestRunTagFiltering:
-    def test_run_with_include_tag(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "tagged_session:session", "-t", "unit")
+    def test_run_with_include_tag(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "tagged_session:session", "-t", "unit")
         result.assert_success()
         assert "2/2 passed" in result.stdout
 
-    def test_run_with_exclude_tag(self, run_protest: Callable[..., CLIResult]) -> None:
-        result = run_protest("run", "tagged_session:session", "--no-tag", "slow")
+    def test_run_with_exclude_tag(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "tagged_session:session", "--no-tag", "slow")
         result.assert_success()
         assert "3/3 passed" in result.stdout
 
     def test_run_with_multiple_include_tags(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        result = run_protest("run", "tagged_session:session", "-t", "unit", "-t", "api")
+        result = run_apte("run", "tagged_session:session", "-t", "unit", "-t", "api")
         result.assert_success()
         assert "4/4 passed" in result.stdout
 
 
 class TestRunLastFailed:
     def test_last_failed_reruns_only_failures(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        first_run = run_protest("run", "failing_session:session")
+        first_run = run_apte("run", "failing_session:session")
         first_run.assert_failure()
 
-        second_run = run_protest("run", "failing_session:session", "--lf")
+        second_run = run_apte("run", "failing_session:session", "--lf")
         second_run.assert_failure()
         assert "test_failing" in second_run.stdout
 
-    def test_cache_clear_runs_all(self, run_protest: Callable[..., CLIResult]) -> None:
-        run_protest("run", "failing_session:session")
+    def test_cache_clear_runs_all(self, run_apte: Callable[..., CLIResult]) -> None:
+        run_apte("run", "failing_session:session")
 
-        result = run_protest("run", "failing_session:session", "--cache-clear")
+        result = run_apte("run", "failing_session:session", "--cache-clear")
         result.assert_failure()
         # Summary shows 3 tests ran (2 passed, 1 failed) - proves cache was cleared
         assert "2/3 passed" in result.stdout
@@ -86,16 +86,16 @@ class TestRunLastFailed:
 
 class TestRunCapture:
     def test_no_capture_shows_print_output(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        result = run_protest("run", "print_session:session", "-s")
+        result = run_apte("run", "print_session:session", "-s")
         result.assert_success()
         result.assert_output_contains("VISIBLE_OUTPUT_FROM_TEST")
 
     def test_capture_hides_print_output(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        result = run_protest("run", "print_session:session")
+        result = run_apte("run", "print_session:session")
         result.assert_success()
         assert "VISIBLE_OUTPUT_FROM_TEST" not in result.stdout
 
@@ -103,57 +103,51 @@ class TestRunCapture:
 class TestRunFilterCombinations:
     """Tests combining --lf, -x, and tag filters via CLI."""
 
-    def test_lf_with_tag_cli(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_lf_with_tag_cli(self, run_apte: Callable[..., CLIResult]) -> None:
         """--lf --tag: intersection of failed and tagged tests."""
-        first_run = run_protest("run", "tagged_failing_session:session")
+        first_run = run_apte("run", "tagged_failing_session:session")
         first_run.assert_failure()
 
-        second_run = run_protest(
+        second_run = run_apte(
             "run", "tagged_failing_session:session", "--lf", "-t", "fast"
         )
         second_run.assert_failure()
         assert "test_fast_fail" in second_run.stdout
         assert "test_slow_fail" not in second_run.stdout
 
-    def test_lf_with_exclude_tag_cli(
-        self, run_protest: Callable[..., CLIResult]
-    ) -> None:
+    def test_lf_with_exclude_tag_cli(self, run_apte: Callable[..., CLIResult]) -> None:
         """--lf --exclude-tag: failed tests without excluded tag."""
-        first_run = run_protest("run", "tagged_failing_session:session")
+        first_run = run_apte("run", "tagged_failing_session:session")
         first_run.assert_failure()
 
-        second_run = run_protest(
+        second_run = run_apte(
             "run", "tagged_failing_session:session", "--lf", "--no-tag", "slow"
         )
         second_run.assert_failure()
         assert "test_fast_fail" in second_run.stdout
         assert "test_slow_fail" not in second_run.stdout
 
-    def test_lf_exitfirst_cli(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_lf_exitfirst_cli(self, run_apte: Callable[..., CLIResult]) -> None:
         """--lf -x: stop on first failure among last-failed tests."""
-        first_run = run_protest("run", "tagged_failing_session:session")
+        first_run = run_apte("run", "tagged_failing_session:session")
         first_run.assert_failure()
 
-        second_run = run_protest("run", "tagged_failing_session:session", "--lf", "-x")
+        second_run = run_apte("run", "tagged_failing_session:session", "--lf", "-x")
         second_run.assert_failure()
         assert "0/1" in second_run.stdout
 
-    def test_tag_exitfirst_cli(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_tag_exitfirst_cli(self, run_apte: Callable[..., CLIResult]) -> None:
         """--tag -x: stop on first failure among tagged tests."""
-        result = run_protest(
-            "run", "tagged_failing_session:session", "-t", "slow", "-x"
-        )
+        result = run_apte("run", "tagged_failing_session:session", "-t", "slow", "-x")
         result.assert_failure()
         assert "0/1" in result.stdout
 
-    def test_all_three_combined_cli(
-        self, run_protest: Callable[..., CLIResult]
-    ) -> None:
+    def test_all_three_combined_cli(self, run_apte: Callable[..., CLIResult]) -> None:
         """--lf --tag -x: failed + tagged + stop on first failure."""
-        first_run = run_protest("run", "tagged_failing_session:session")
+        first_run = run_apte("run", "tagged_failing_session:session")
         first_run.assert_failure()
 
-        second_run = run_protest(
+        second_run = run_apte(
             "run", "tagged_failing_session:session", "--lf", "-t", "slow", "-x"
         )
         second_run.assert_failure()
@@ -163,27 +157,25 @@ class TestRunFilterCombinations:
 class TestRunSuiteFilter:
     """Tests for suite filtering via ::SuiteName target syntax."""
 
-    def test_suite_filter_basic(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_suite_filter_basic(self, run_apte: Callable[..., CLIResult]) -> None:
         """::SuiteName runs only tests in that suite."""
-        result = run_protest("run", "suites_session:session::API")
+        result = run_apte("run", "suites_session:session::API")
         result.assert_success()
         expected_count = 4
         assert f"{expected_count}/{expected_count} passed" in result.stdout
 
-    def test_suite_filter_nested(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_suite_filter_nested(self, run_apte: Callable[..., CLIResult]) -> None:
         """::Parent::Child runs only tests in nested suite."""
-        result = run_protest("run", "suites_session:session::API::Users")
+        result = run_apte("run", "suites_session:session::API::Users")
         result.assert_success()
         expected_count = 2
         assert f"{expected_count}/{expected_count} passed" in result.stdout
 
     def test_suite_filter_collect_only(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
         """--collect-only with suite filter shows filtered tests."""
-        result = run_protest(
-            "run", "suites_session:session::API::Users", "--collect-only"
-        )
+        result = run_apte("run", "suites_session:session::API::Users", "--collect-only")
         result.assert_success()
         result.assert_output_contains("test_users_list")
         result.assert_output_contains("test_users_create")
@@ -194,18 +186,16 @@ class TestRunSuiteFilter:
 class TestRunKeywordFilter:
     """Tests for keyword filtering via -k flag."""
 
-    def test_keyword_filter_basic(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_keyword_filter_basic(self, run_apte: Callable[..., CLIResult]) -> None:
         """-k pattern runs matching tests."""
-        result = run_protest("run", "suites_session:session", "-k", "users")
+        result = run_apte("run", "suites_session:session", "-k", "users")
         result.assert_success()
         expected_count = 2
         assert f"{expected_count}/{expected_count} passed" in result.stdout
 
-    def test_keyword_filter_multiple(
-        self, run_protest: Callable[..., CLIResult]
-    ) -> None:
+    def test_keyword_filter_multiple(self, run_apte: Callable[..., CLIResult]) -> None:
         """Multiple -k flags use OR logic."""
-        result = run_protest(
+        result = run_apte(
             "run", "suites_session:session", "-k", "users", "-k", "test_orders"
         )
         result.assert_success()
@@ -213,10 +203,10 @@ class TestRunKeywordFilter:
         assert f"{expected_count}/{expected_count} passed" in result.stdout
 
     def test_keyword_filter_collect_only(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
         """--collect-only with keyword filter shows matching tests."""
-        result = run_protest(
+        result = run_apte(
             "run", "suites_session:session", "-k", "users", "--collect-only"
         )
         result.assert_success()
@@ -229,16 +219,16 @@ class TestRunKeywordFilter:
 class TestRunSuiteAndKeywordCombined:
     """Tests combining suite and keyword filters."""
 
-    def test_suite_and_keyword(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_suite_and_keyword(self, run_apte: Callable[..., CLIResult]) -> None:
         """::SuiteName -k pattern intersect."""
-        result = run_protest("run", "suites_session:session::API", "-k", "users")
+        result = run_apte("run", "suites_session:session::API", "-k", "users")
         result.assert_success()
         expected_count = 2
         assert f"{expected_count}/{expected_count} passed" in result.stdout
 
-    def test_suite_keyword_and_tag(self, run_protest: Callable[..., CLIResult]) -> None:
+    def test_suite_keyword_and_tag(self, run_apte: Callable[..., CLIResult]) -> None:
         """::SuiteName -k pattern -t tag all intersect."""
-        result = run_protest(
+        result = run_apte(
             "run", "tagged_session:session::API", "-k", "api", "-t", "slow"
         )
         result.assert_success()
@@ -247,20 +237,18 @@ class TestRunSuiteAndKeywordCombined:
 
 
 class TestRunRejectsEvalOnlyFlags:
-    """`--show-output` is eval-only and must not be accepted by `protest run`.
+    """`--show-output` is eval-only and must not be accepted by `apte run`.
 
-    The CLI parser is split: `protest run` builds a parser without eval-only
+    The CLI parser is split: `apte run` builds a parser without eval-only
     flags, so passing `--show-output` should raise an argparse error rather
     than silently no-op (the previous behavior was a UX papercut: the flag
-    appeared in `protest run --help` but did nothing for non-eval tests).
+    appeared in `apte run --help` but did nothing for non-eval tests).
     """
 
-    def test_run_rejects_show_output(
-        self, run_protest: Callable[..., CLIResult]
-    ) -> None:
-        result = run_protest("run", "simple_session:session", "--show-output")
+    def test_run_rejects_show_output(self, run_apte: Callable[..., CLIResult]) -> None:
+        result = run_apte("run", "simple_session:session", "--show-output")
         assert result.exit_code != 0, (
-            f"Expected non-zero exit for `protest run --show-output`, "
+            f"Expected non-zero exit for `apte run --show-output`, "
             f"got {result.exit_code}\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
         assert "show-output" in result.stderr, (
@@ -269,9 +257,9 @@ class TestRunRejectsEvalOnlyFlags:
         )
 
     def test_run_help_omits_show_output(
-        self, run_protest: Callable[..., CLIResult]
+        self, run_apte: Callable[..., CLIResult]
     ) -> None:
-        result = run_protest("run", "--help")
+        result = run_apte("run", "--help")
         assert "--show-output" not in result.stdout, (
-            f"Expected --show-output absent from `protest run --help`:\n{result.stdout}"
+            f"Expected --show-output absent from `apte run --help`:\n{result.stdout}"
         )

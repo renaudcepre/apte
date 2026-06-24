@@ -4,16 +4,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from protest.core.suite import ProTestSuite
-from protest.entities import TestItem
-from protest.filters import SuiteFilterPlugin
+from apte.core.suite import ApteSuite
+from apte.entities import TestItem
+from apte.filters import SuiteFilterPlugin
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
 def _make_test_item(
-    name: str, suite: ProTestSuite | None = None, tags: set[str] | None = None
+    name: str, suite: ApteSuite | None = None, tags: set[str] | None = None
 ) -> TestItem:
     def dummy() -> None:
         pass
@@ -24,25 +24,25 @@ def _make_test_item(
 
 
 @pytest.fixture
-def make_item() -> Callable[[str, ProTestSuite | None, set[str] | None], TestItem]:
+def make_item() -> Callable[[str, ApteSuite | None, set[str] | None], TestItem]:
     return _make_test_item
 
 
 @pytest.fixture
-def api_suite() -> ProTestSuite:
-    return ProTestSuite("API")
+def api_suite() -> ApteSuite:
+    return ApteSuite("API")
 
 
 @pytest.fixture
-def users_suite(api_suite: ProTestSuite) -> ProTestSuite:
-    users = ProTestSuite("Users")
+def users_suite(api_suite: ApteSuite) -> ApteSuite:
+    users = ApteSuite("Users")
     api_suite.add_suite(users)
     return users
 
 
 @pytest.fixture
-def orders_suite(api_suite: ProTestSuite) -> ProTestSuite:
-    orders = ProTestSuite("Orders")
+def orders_suite(api_suite: ApteSuite) -> ApteSuite:
+    orders = ApteSuite("Orders")
     api_suite.add_suite(orders)
     return orders
 
@@ -50,8 +50,8 @@ def orders_suite(api_suite: ProTestSuite) -> ProTestSuite:
 class TestSuiteFilterPluginNoFilter:
     def test_no_filter_returns_all(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin()
         items = [
@@ -64,8 +64,8 @@ class TestSuiteFilterPluginNoFilter:
 
     def test_none_filter_returns_all(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter=None)
         items = [make_item("test_a", api_suite), make_item("test_b", api_suite)]
@@ -77,8 +77,8 @@ class TestSuiteFilterPluginNoFilter:
 class TestSuiteFilterPluginBasic:
     def test_matches_exact_suite(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="API")
         items = [make_item("test_api", api_suite)]
@@ -89,8 +89,8 @@ class TestSuiteFilterPluginBasic:
 
     def test_excludes_standalone_tests(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="API")
         items = [
@@ -104,10 +104,10 @@ class TestSuiteFilterPluginBasic:
 
     def test_excludes_sibling_suites(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
-        other_suite = ProTestSuite("Other")
+        other_suite = ApteSuite("Other")
         plugin = SuiteFilterPlugin(suite_filter="API")
         items = [
             make_item("test_api", api_suite),
@@ -122,10 +122,10 @@ class TestSuiteFilterPluginBasic:
 class TestSuiteFilterPluginNested:
     def test_matches_child_suites(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
-        users_suite: ProTestSuite,
-        orders_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
+        users_suite: ApteSuite,
+        orders_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="API")
         items = [
@@ -139,10 +139,10 @@ class TestSuiteFilterPluginNested:
 
     def test_filter_specific_child(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
-        users_suite: ProTestSuite,
-        orders_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
+        users_suite: ApteSuite,
+        orders_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="API::Users")
         items = [
@@ -157,10 +157,10 @@ class TestSuiteFilterPluginNested:
 
     def test_filter_deeply_nested(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        users_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        users_suite: ApteSuite,
     ) -> None:
-        perms_suite = ProTestSuite("Permissions")
+        perms_suite = ApteSuite("Permissions")
         users_suite.add_suite(perms_suite)
         plugin = SuiteFilterPlugin(suite_filter="API::Users")
         items = [
@@ -173,8 +173,8 @@ class TestSuiteFilterPluginNested:
 
     def test_partial_path_no_match(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        users_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        users_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="Users")
         items = [make_item("test_users", users_suite)]
@@ -186,8 +186,8 @@ class TestSuiteFilterPluginNested:
 class TestSuiteFilterPluginEdgeCases:
     def test_nonexistent_suite_returns_empty(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
-        api_suite: ProTestSuite,
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
+        api_suite: ApteSuite,
     ) -> None:
         plugin = SuiteFilterPlugin(suite_filter="NonExistent")
         items = [make_item("test_api", api_suite)]
@@ -203,10 +203,10 @@ class TestSuiteFilterPluginEdgeCases:
 
     def test_suite_name_prefix_collision(
         self,
-        make_item: Callable[[str, ProTestSuite | None, set[str] | None], TestItem],
+        make_item: Callable[[str, ApteSuite | None, set[str] | None], TestItem],
     ) -> None:
-        api_suite = ProTestSuite("API")
-        api_v2_suite = ProTestSuite("APIv2")
+        api_suite = ApteSuite("API")
+        api_v2_suite = ApteSuite("APIv2")
         plugin = SuiteFilterPlugin(suite_filter="API")
         items = [
             make_item("test_api", api_suite),

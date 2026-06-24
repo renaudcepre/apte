@@ -1,12 +1,12 @@
 import pytest
 from typing_extensions import Self
 
-from protest.core.session import ProTestSession
-from protest.core.suite import ProTestSuite
-from protest.entities import SessionResult, TestResult
-from protest.events.types import Event
-from protest.exceptions import InvalidMaxConcurrencyError
-from protest.plugin import PluginBase, PluginContext
+from apte.core.session import ApteSession
+from apte.core.suite import ApteSuite
+from apte.entities import SessionResult, TestResult
+from apte.events.types import Event
+from apte.exceptions import InvalidMaxConcurrencyError
+from apte.plugin import PluginBase, PluginContext
 
 
 class TestPluginWiring:
@@ -15,7 +15,7 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_wires_on_test_pass_handler(self) -> None:
         """on_test_pass method is wired to TEST_PASS event."""
-        session = ProTestSession()
+        session = ApteSession()
         received: list[TestResult] = []
 
         class TestPlugin(PluginBase):
@@ -33,7 +33,7 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_wires_multiple_handlers(self) -> None:
         """Multiple on_* methods are all wired."""
-        session = ProTestSession()
+        session = ApteSession()
         events_received: list[str] = []
 
         class MultiPlugin(PluginBase):
@@ -59,7 +59,7 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_ignores_non_matching_methods(self) -> None:
         """Methods not matching on_* pattern are ignored."""
-        session = ProTestSession()
+        session = ApteSession()
 
         class PluginWithOtherMethods(PluginBase):
             def __init__(self) -> None:
@@ -79,14 +79,14 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_calls_setup_if_present(self) -> None:
         """setup(session) is called if the plugin has it."""
-        session = ProTestSession()
+        session = ApteSession()
 
         class PluginWithSetup(PluginBase):
             def __init__(self) -> None:
                 self.setup_called = False
-                self.received_session: ProTestSession | None = None
+                self.received_session: ApteSession | None = None
 
-            def setup(self, session: ProTestSession) -> None:
+            def setup(self, session: ApteSession) -> None:
                 self.setup_called = True
                 self.received_session = session
 
@@ -99,7 +99,7 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_works_without_setup(self) -> None:
         """Plugins without setup() still work."""
-        session = ProTestSession()
+        session = ApteSession()
         received: list[str] = []
 
         class PluginWithoutSetup(PluginBase):
@@ -114,7 +114,7 @@ class TestPluginWiring:
     @pytest.mark.asyncio
     async def test_use_with_async_handler(self) -> None:
         """Async handlers are wired correctly."""
-        session = ProTestSession()
+        session = ApteSession()
         received: list[str] = []
 
         class AsyncPlugin(PluginBase):
@@ -129,31 +129,31 @@ class TestPluginWiring:
 
 
 class TestSessionConcurrency:
-    """ProTestSession concurrency configuration."""
+    """ApteSession concurrency configuration."""
 
     def test_default_concurrency_is_one(self) -> None:
         """Default concurrency is 1 (sequential)."""
-        session = ProTestSession()
+        session = ApteSession()
         assert session.concurrency == 1
 
     def test_concurrency_can_be_set_in_constructor(self) -> None:
         """Concurrency can be set via constructor."""
-        session = ProTestSession(concurrency=4)
+        session = ApteSession(concurrency=4)
         assert session.concurrency == 4
 
     def test_constructor_rejects_zero_concurrency(self) -> None:
-        """ProTestSession(concurrency=0) raises InvalidMaxConcurrencyError."""
+        """ApteSession(concurrency=0) raises InvalidMaxConcurrencyError."""
         with pytest.raises(InvalidMaxConcurrencyError):
-            ProTestSession(concurrency=0)
+            ApteSession(concurrency=0)
 
     def test_constructor_rejects_negative_concurrency(self) -> None:
-        """ProTestSession(concurrency=-1) raises InvalidMaxConcurrencyError."""
+        """ApteSession(concurrency=-1) raises InvalidMaxConcurrencyError."""
         with pytest.raises(InvalidMaxConcurrencyError):
-            ProTestSession(concurrency=-1)
+            ApteSession(concurrency=-1)
 
     def test_concurrency_setter_rejects_invalid_values(self) -> None:
         """Concurrency setter rejects values < 1."""
-        session = ProTestSession()
+        session = ApteSession()
 
         with pytest.raises(InvalidMaxConcurrencyError):
             session.concurrency = 0
@@ -167,42 +167,42 @@ class TestSessionConcurrency:
 
 
 class TestSuiteMaxConcurrency:
-    """ProTestSuite max_concurrency configuration."""
+    """ApteSuite max_concurrency configuration."""
 
     def test_default_suite_max_concurrency_is_none(self) -> None:
         """Default suite max_concurrency is None (no cap)."""
 
-        suite = ProTestSuite("test_suite")
+        suite = ApteSuite("test_suite")
         assert suite.max_concurrency is None
 
     def test_suite_max_concurrency_can_be_set_in_constructor(self) -> None:
         """Suite max_concurrency can be set via constructor."""
 
-        suite = ProTestSuite("test_suite", max_concurrency=2)
+        suite = ApteSuite("test_suite", max_concurrency=2)
         assert suite.max_concurrency == 2
 
     def test_suite_rejects_zero_max_concurrency(self) -> None:
-        """ProTestSuite(max_concurrency=0) raises InvalidMaxConcurrencyError."""
+        """ApteSuite(max_concurrency=0) raises InvalidMaxConcurrencyError."""
         with pytest.raises(InvalidMaxConcurrencyError):
-            ProTestSuite("invalid", max_concurrency=0)
+            ApteSuite("invalid", max_concurrency=0)
 
     def test_suite_rejects_negative_max_concurrency(self) -> None:
-        """ProTestSuite(max_concurrency=-1) raises InvalidMaxConcurrencyError."""
+        """ApteSuite(max_concurrency=-1) raises InvalidMaxConcurrencyError."""
         with pytest.raises(InvalidMaxConcurrencyError):
-            ProTestSuite("invalid", max_concurrency=-1)
+            ApteSuite("invalid", max_concurrency=-1)
 
     def test_suite_max_concurrency_one_means_sequential(self) -> None:
         """Suite with max_concurrency=1 forces sequential execution."""
 
-        suite = ProTestSuite("sequential_suite", max_concurrency=1)
+        suite = ApteSuite("sequential_suite", max_concurrency=1)
         assert suite.max_concurrency == 1
 
     def test_multiple_suites_different_max_concurrency(self) -> None:
         """Different suites can have different max_concurrency settings."""
 
-        fast_suite = ProTestSuite("fast_tests", max_concurrency=10)
-        slow_suite = ProTestSuite("db_tests", max_concurrency=1)
-        default_suite = ProTestSuite("normal_tests")
+        fast_suite = ApteSuite("fast_tests", max_concurrency=10)
+        slow_suite = ApteSuite("db_tests", max_concurrency=1)
+        default_suite = ApteSuite("normal_tests")
 
         assert fast_suite.max_concurrency == 10
         assert slow_suite.max_concurrency == 1
@@ -244,7 +244,7 @@ class TestActivatePluginsIdempotence:
     @pytest.mark.asyncio
     async def test_activate_plugins_only_registers_once(self) -> None:
         """Calling activate_plugins twice doesn't register plugins twice."""
-        session = ProTestSession()
+        session = ApteSession()
         activation_count = 0
 
         class CountingPlugin(PluginBase):
@@ -268,7 +268,7 @@ class TestActivatePluginsIdempotence:
     @pytest.mark.asyncio
     async def test_handlers_fire_once_after_double_activation(self) -> None:
         """Handlers only fire once even if activate_plugins called twice."""
-        session = ProTestSession()
+        session = ApteSession()
         handler_calls = 0
 
         class HandlerPlugin(PluginBase):

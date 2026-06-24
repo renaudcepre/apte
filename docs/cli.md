@@ -1,11 +1,11 @@
 # CLI Reference
 
-Complete reference for the ProTest command-line interface.
+Complete reference for the Apte command-line interface.
 
 ## Synopsis
 
 ```bash
-protest <command> [options] <target>
+apte <command> [options] <target>
 ```
 
 ## Commands
@@ -19,14 +19,14 @@ protest <command> [options] <target>
 
 ---
 
-## protest run
+## apte run
 
 Run tests from a session.
 
 ### Syntax
 
 ```bash
-protest run <target> [options]
+apte run <target> [options]
 ```
 
 ### Target Format
@@ -38,16 +38,16 @@ protest run <target> [options]
 | Part | Required | Description |
 |------|----------|-------------|
 | `module` | Yes | Python module path |
-| `session` | Yes | Name of the `ProTestSession` variable |
+| `session` | Yes | Name of the `ApteSession` variable |
 | `::SuiteName` | No | Filter to specific suite |
 
 **Examples:**
 
 ```bash
-protest run tests:session              # Run all tests
-protest run myapp.tests:session        # Module in package
-protest run tests:session::API         # Only API suite
-protest run tests:session::API::Users  # Nested suite
+apte run tests:session              # Run all tests
+apte run myapp.tests:session        # Module in package
+apte run tests:session::API         # Only API suite
+apte run tests:session::API::Users  # Nested suite
 ```
 
 ### Options
@@ -78,7 +78,7 @@ protest run tests:session::API::Users  # Nested suite
 | Option | Description |
 |--------|-------------|
 | `--no-color` | Disable colors (plain ASCII output) |
-| `--no-log-file` | Disable writing to `.protest/last_run.log` |
+| `--no-log-file` | Disable writing to `.apte/last_run.log` |
 | `--ctrf-output PATH` | Output CTRF JSON report to PATH |
 
 ---
@@ -100,11 +100,11 @@ The suite filter is part of the target, not a separate option. It filters tests 
 # └── test_standalone
 
 # Run all API tests (including Users)
-protest run tests:session::API
+apte run tests:session::API
 # Runs: test_api_health, test_list_users, test_create_user
 
 # Run only Users tests
-protest run tests:session::API::Users
+apte run tests:session::API::Users
 # Runs: test_list_users, test_create_user
 
 # Standalone tests are excluded when using suite filter
@@ -119,15 +119,15 @@ Match tests by substring in their name. Multiple `-k` flags use OR logic.
 
 ```bash
 # Match test names containing "login"
-protest run tests:session -k login
+apte run tests:session -k login
 # Matches: test_login, test_login_failed, test_user_login
 
 # Multiple keywords (OR logic)
-protest run tests:session -k login -k logout
+apte run tests:session -k login -k logout
 # Matches: test_login, test_logout, test_login_failed
 
 # Works with parameterized tests (matches case IDs too)
-protest run tests:session -k admin
+apte run tests:session -k admin
 # Matches: test_user[admin], test_permissions[admin-read]
 ```
 
@@ -140,16 +140,16 @@ Filter by tags declared on tests, suites, or fixtures.
 
 ```bash
 # Include tests with tag
-protest run tests:session -t unit
+apte run tests:session -t unit
 
 # Multiple tags (OR logic)
-protest run tests:session -t unit -t integration
+apte run tests:session -t unit -t integration
 
 # Exclude tests with tag
-protest run tests:session --no-tag slow
+apte run tests:session --no-tag slow
 
 # Combine include and exclude
-protest run tests:session -t api --no-tag flaky
+apte run tests:session -t api --no-tag flaky
 ```
 
 Tags are inherited:
@@ -163,11 +163,11 @@ Re-run only tests that failed in the previous run.
 
 ```bash
 # First run - some tests fail
-protest run tests:session
+apte run tests:session
 # Output: 8/10 passed, 2 failed
 
 # Second run - only failed tests
-protest run tests:session --lf
+apte run tests:session --lf
 # Runs only the 2 failed tests
 ```
 
@@ -179,7 +179,7 @@ protest run tests:session --lf
 
 ```bash
 # Clear cache to run all tests again
-protest run tests:session --cache-clear
+apte run tests:session --cache-clear
 ```
 
 ---
@@ -190,15 +190,15 @@ All filters compose as **intersection** (AND logic between filter types).
 
 ```bash
 # Suite AND keyword
-protest run tests:session::API -k users
+apte run tests:session::API -k users
 # Tests in API suite with "users" in name
 
 # Suite AND keyword AND tag
-protest run tests:session::API -k users -t slow
+apte run tests:session::API -k users -t slow
 # Tests in API suite, with "users" in name, tagged "slow"
 
 # Suite AND keyword AND tag AND last-failed
-protest run tests:session::API -k users -t slow --lf
+apte run tests:session::API -k users -t slow --lf
 # Failed tests in API suite, with "users" in name, tagged "slow"
 ```
 
@@ -221,79 +221,79 @@ Collected tests
 
 ```bash
 # Run all tests
-protest run tests:session
+apte run tests:session
 
 # Quick check - stop on first failure
-protest run tests:session -x
+apte run tests:session -x
 
 # Re-run failures
-protest run tests:session --lf
+apte run tests:session --lf
 
 # Re-run failures, stop on first
-protest run tests:session --lf -x
+apte run tests:session --lf -x
 ```
 
 ### CI/CD Workflow
 
 ```bash
 # Full test suite, parallel
-protest run tests:session -n 4
+apte run tests:session -n 4
 
 # Unit tests only
-protest run tests:session -t unit -n 4
+apte run tests:session -t unit -n 4
 
 # Integration tests (might need sequential)
-protest run tests:session -t integration
+apte run tests:session -t integration
 
 # Generate CTRF report for CI tools
-protest run tests:session -n 4 --ctrf-output ctrf-report.json
+apte run tests:session -n 4 --ctrf-output ctrf-report.json
 ```
 
 ### Debugging
 
 ```bash
 # See output from tests
-protest run tests:session -s
+apte run tests:session -s
 
 # Run specific test
-protest run tests:session -k test_specific_function
+apte run tests:session -k test_specific_function
 
 # List what would run
-protest run tests:session::API -k login --collect-only
+apte run tests:session::API -k login --collect-only
 ```
 
 ### Working on a Feature
 
 ```bash
 # Focus on one suite during development
-protest run tests:session::API::Users -x
+apte run tests:session::API::Users -x
 
 # Run related tests
-protest run tests:session -k user -x
+apte run tests:session -k user -x
 
 # Check everything still works
-protest run tests:session
+apte run tests:session
 ```
 
 ---
 
-## protest eval
+## apte eval
 
 Run evaluations from a session.
 
-`protest eval` is the eval-suite counterpart of `protest run`. It shares
+`apte eval` is the eval-suite counterpart of `apte run`. It shares
 the same target format, filters, capture flags and reporting options as
 `run`; the differences are listed below.
 
 ### Syntax
 
 ```bash
-protest eval <target> [options]
+apte eval <target> [options]
 ```
 
 ### Options
 
-`protest eval` accepts every option from `protest run` (see above:
+`apte eval` accepts every option from `apte run` (see above:
 `-n/--concurrency`, `--collect-only`, `-x/--exitfirst`, `-s/--no-capture`,
 `-q/--quiet`, `-v/--verbose`, `--show-logs`, `-t/--tag`, `--no-tag`,
 `-k/--keyword`, `--lf`, `--cache-clear`, `--no-color`, `--ctrf-output`,
@@ -307,22 +307,22 @@ protest eval <target> [options]
 
 ```bash
 # Run all evals in a session
-protest eval evals.session:session
+apte eval evals.session:session
 
 # One specific suite
-protest eval evals.session:session::helpdesk_struct
+apte eval evals.session:session::helpdesk_struct
 
 # One ticket by name
-protest eval evals.session:session -k T001
+apte eval evals.session:session -k T001
 
 # All cases tagged "cat:hardware"
-protest eval evals.session:session --tag cat:hardware
+apte eval evals.session:session --tag cat:hardware
 
 # Re-run only the cases that failed last time
-protest eval evals.session:session --lf
+apte eval evals.session:session --lf
 
 # Show the input/output of every case (not just failures)
-protest eval evals.session:session --show-output
+apte eval evals.session:session --show-output
 ```
 
 ### Output
@@ -338,31 +338,31 @@ fields across cases (mean / p50 / p5 / p95). `Verdict` and `Reason`
 fields don't appear in this table - only numeric `Metric` fields do.
 
 Per-case markdown artifacts are written to
-`.protest/results/<suite>_<timestamp>/<case-id>.md`, with the full
+`.apte/results/<suite>_<timestamp>/<case-id>.md`, with the full
 input, output, expected, and per-evaluator scores.
 
 ---
 
 ## Run history (recorded)
 
-Every `run` / `eval` appends one entry to `.protest/history.jsonl`
+Every `run` / `eval` appends one entry to `.apte/history.jsonl`
 (schema-versioned JSONL). History is **recorded from the first run** so the
 data accumulates over time; dedicated commands to browse and compare runs
 land in a future release.
 
 Per-case eval detail (input, output, expected, evaluator scores) is written
-to `.protest/results/<suite>_<timestamp>/<case-id>.md`.
+to `.apte/results/<suite>_<timestamp>/<case-id>.md`.
 
 ---
 
-## protest live
+## apte live
 
 Start a persistent live reporter server for real-time test visualization.
 
 ### Syntax
 
 ```bash
-protest live [options]
+apte live [options]
 ```
 
 ### Options
@@ -375,24 +375,24 @@ protest live [options]
 
 ```bash
 # Start the live server
-protest live
+apte live
 
 # Start on a custom port
-protest live -p 9000
+apte live -p 9000
 ```
 
 The live server stays running and displays test results in real-time as you run tests in another terminal.
 
 ---
 
-## protest tags list
+## apte tags list
 
 List tags declared in a session.
 
 ### Syntax
 
 ```bash
-protest tags list <target> [options]
+apte tags list <target> [options]
 ```
 
 ### Options
@@ -406,7 +406,7 @@ protest tags list <target> [options]
 
 ```bash
 # List all declared tags
-protest tags list tests:session
+apte tags list tests:session
 # Output:
 # api
 # database
@@ -415,7 +415,7 @@ protest tags list tests:session
 # unit
 
 # Show tags per test (includes inherited)
-protest tags list tests:session -r
+apte tags list tests:session -r
 # Output:
 # Effective tags for 3 test(s):
 #
@@ -444,25 +444,25 @@ protest tags list tests:session -r
 
 ### Cache Location
 
-Test results are cached in `.protest/cache.json` relative to the current directory.
+Test results are cached in `.apte/cache.json` relative to the current directory.
 
 ```bash
 # View cache location
-ls .protest/
+ls .apte/
 
 # Clear cache
-protest run tests:session --cache-clear
-# Or manually: rm -rf .protest/
+apte run tests:session --cache-clear
+# Or manually: rm -rf .apte/
 ```
 
 ### Module Resolution
 
-By default, ProTest looks for modules in the current directory. Use `--app-dir` to specify a different location:
+By default, Apte looks for modules in the current directory. Use `--app-dir` to specify a different location:
 
 ```bash
 # Module in src/ directory
-protest run myapp.tests:session --app-dir src
+apte run myapp.tests:session --app-dir src
 
 # Module in project root (default)
-protest run tests:session
+apte run tests:session
 ```

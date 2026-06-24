@@ -10,9 +10,9 @@ import time
 from collections.abc import Generator
 from typing import Annotated
 
-from protest import ProTestSuite, Use, fixture
+from apte import ApteSuite, Use, fixture
 
-legacy_suite = ProTestSuite(
+legacy_suite = ApteSuite(
     "Legacy",
     description="Old sync-only code, no parallel execution",
     tags=["legacy"],

@@ -1,12 +1,12 @@
-from protest import ProTestSession, ProTestSuite
+from apte import ApteSession, ApteSuite
 
-session = ProTestSession()
+session = ApteSession()
 session.register_default_plugins()
 
-api_suite = ProTestSuite("API")
-users_suite = ProTestSuite("Users")
-orders_suite = ProTestSuite("Orders")
-other_suite = ProTestSuite("Other")
+api_suite = ApteSuite("API")
+users_suite = ApteSuite("Users")
+orders_suite = ApteSuite("Orders")
+other_suite = ApteSuite("Other")
 
 api_suite.add_suite(users_suite)
 api_suite.add_suite(orders_suite)

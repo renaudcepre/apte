@@ -1,7 +1,7 @@
-site_name: ProTest
+site_name: Apte
 site_description: Async-first testing with explicit dependency injection
-repo_url: https://github.com/renaudcepre/protest
-repo_name: renaudcepre/protest
+repo_url: https://github.com/renaudcepre/apte
+repo_name: renaudcepre/apte
 
 theme:
   name: material
@@ -71,7 +71,7 @@ nav:
       - Best Practices: best-practices.md
       - Project Organization: guides/project-organization.md
       - Testing FastAPI: guides/testing-fastapi.md
-      - Migrating from pytest: guides/pytest-to-protest.md
+      - Migrating from pytest: guides/pytest-to-apte.md
   - CLI Reference: cli.md
   - FAQ: faq.md
   - Internals:

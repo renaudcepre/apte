@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from protest.entities.events import EvalPayload, EvalScoreEntry, TestResult
-from protest.evals.types import EvalCaseResult
+from apte.entities.events import EvalPayload, EvalScoreEntry, TestResult
+from apte.evals.types import EvalCaseResult
 
 
 def _make_payload(**overrides: object) -> EvalPayload:

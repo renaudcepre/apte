@@ -1,10 +1,10 @@
 import logging
 from typing import Annotated
 
-from protest import ProTestSession, Use, caplog
-from protest.core.runner import TestRunner
-from protest.entities import LogCapture
-from protest.plugin import PluginBase
+from apte import ApteSession, Use, caplog
+from apte.core.runner import TestRunner
+from apte.entities import LogCapture
+from apte.plugin import PluginBase
 from tests.conftest import CollectedEvents
 
 
@@ -15,7 +15,7 @@ class TestCaplogFixture:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -32,7 +32,7 @@ class TestCaplogFixture:
         assert len(collected.test_passes) == expected_pass_count
 
     def test_caplog_captures_different_levels(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_levels(logs: Annotated[LogCapture, Use(caplog)]) -> None:
@@ -53,7 +53,7 @@ class TestCaplogFixture:
         assert result.success is True
 
     def test_caplog_at_level_filtering(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_filter(logs: Annotated[LogCapture, Use(caplog)]) -> None:
@@ -71,7 +71,7 @@ class TestCaplogFixture:
         assert result.success is True
 
     def test_caplog_text_property(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_text(logs: Annotated[LogCapture, Use(caplog)]) -> None:
@@ -86,7 +86,7 @@ class TestCaplogFixture:
         assert result.success is True
 
     def test_caplog_clear(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_clear(logs: Annotated[LogCapture, Use(caplog)]) -> None:
@@ -106,7 +106,7 @@ class TestCaplogFixture:
         assert result.success is True
 
     def test_caplog_isolation_between_tests(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         captured_counts: list[int] = []
 
         @session.test()
@@ -126,7 +126,7 @@ class TestCaplogFixture:
         assert captured_counts == [1, 1]
 
     def test_caplog_with_named_logger(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_named_logger(logs: Annotated[LogCapture, Use(caplog)]) -> None:
@@ -145,7 +145,7 @@ class TestCaplogFixture:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession(concurrency=3)
+        session = ApteSession(concurrency=3)
         session.register_plugin(plugin)
 
         @session.test()

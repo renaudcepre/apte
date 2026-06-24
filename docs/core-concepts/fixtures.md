@@ -7,7 +7,7 @@ Fixtures provide reusable setup and teardown logic for tests.
 A fixture is a function decorated with `@fixture` that provides a value to tests.
 
 ```python
-from protest import fixture
+from apte import fixture
 
 @fixture
 def config():
@@ -25,7 +25,7 @@ The `@fixture` decorator only marks a function as a fixture. The scope is set wh
 Bind to session with `session.bind()`. Lives for the entire test session.
 
 ```python
-from protest import fixture, ProTestSession
+from apte import fixture, ApteSession
 
 @fixture
 async def database():
@@ -33,7 +33,7 @@ async def database():
     yield db
     await db.close()
 
-session = ProTestSession()
+session = ApteSession()
 session.bind(database)  # → SESSION scope
 ```
 
@@ -44,13 +44,13 @@ Use case: Expensive resources shared across all tests (database connections, HTT
 Bind to suite with `suite.bind()`. Lives for the duration of the suite.
 
 ```python
-from protest import fixture, ProTestSuite
+from apte import fixture, ApteSuite
 
 @fixture
 def api_client(db: Annotated[Database, Use(database)]):
     return Client(db)
 
-api_suite = ProTestSuite("API")
+api_suite = ApteSuite("API")
 api_suite.bind(api_client)  # → SUITE scope
 ```
 
@@ -180,7 +180,7 @@ async def wide_api():
     yield api
 
 # Suite limits to 2 concurrent tests
-suite = ProTestSuite("narrow", max_concurrency=2)
+suite = ApteSuite("narrow", max_concurrency=2)
 suite.bind(wide_api)
 
 # Tests limited to 2 (suite limit), even though fixture allows 5
@@ -191,7 +191,7 @@ suite.bind(wide_api)
 Session concurrency also caps the effective limit:
 
 ```python
-session = ProTestSession(concurrency=3)
+session = ApteSession(concurrency=3)
 
 @fixture(max_concurrency=10)
 async def api():

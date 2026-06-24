@@ -1,4 +1,4 @@
-"""Tests for protest.evals.hashing - fail-hard canonicalization."""
+"""Tests for apte.evals.hashing - fail-hard canonicalization."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import threading
 
 import pytest
 
-from protest.evals.hashing import (
+from apte.evals.hashing import (
     CanonicalError,
     _canonical,
     compute_case_hash,

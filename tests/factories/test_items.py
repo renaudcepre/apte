@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from protest.entities import TestItem
+from apte.entities import TestItem
 
 if TYPE_CHECKING:
-    from protest.core.suite import ProTestSuite
+    from apte.core.suite import ApteSuite
 
 
 def make_test_item(
     name: str,
     module: str = "mod",
-    suite: ProTestSuite | None = None,
+    suite: ApteSuite | None = None,
     case_ids: list[str] | None = None,
     tags: set[str] | None = None,
 ) -> TestItem:

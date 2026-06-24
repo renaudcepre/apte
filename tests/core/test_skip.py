@@ -2,16 +2,16 @@
 
 from typing import Annotated
 
-from protest import ForEach, From, ProTestSession, ProTestSuite
-from protest.core.collector import Collector
-from protest.core.runner import TestRunner
-from protest.entities import SessionResult, TestResult
-from protest.plugin import PluginBase
+from apte import ApteSession, ApteSuite, ForEach, From
+from apte.core.collector import Collector
+from apte.core.runner import TestRunner
+from apte.entities import SessionResult, TestResult
+from apte.plugin import PluginBase
 
 
 class TestSkipDecorator:
     def test_skip_with_bool_sets_default_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip=True)
         def test_skipped() -> None:
@@ -25,7 +25,7 @@ class TestSkipDecorator:
         assert items[0].skip.reason == "Skipped"
 
     def test_skip_with_string_sets_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip="WIP: need auth refactor")
         def test_skipped() -> None:
@@ -39,7 +39,7 @@ class TestSkipDecorator:
         assert items[0].skip.reason == "WIP: need auth refactor"
 
     def test_no_skip_has_none_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_normal() -> None:
@@ -52,8 +52,8 @@ class TestSkipDecorator:
         assert items[0].skip is None
 
     def test_suite_skip_decorator(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("test")
+        session = ApteSession()
+        suite = ApteSuite("test")
         session.add_suite(suite)
 
         @suite.test(skip="Suite test skipped")
@@ -70,7 +70,7 @@ class TestSkipDecorator:
 
 class TestSkipExecution:
     def test_skipped_test_does_not_run(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @session.test(skip=True)
@@ -87,7 +87,7 @@ class TestSkipExecution:
         assert executed == ["normal"]
 
     def test_skipped_test_counts_as_skipped(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):
@@ -114,7 +114,7 @@ class TestSkipExecution:
         assert results["failed"] == 0
 
     def test_skipped_test_emits_skip_event(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         skip_results: list[TestResult] = []
 
         class SkipPlugin(PluginBase):
@@ -137,7 +137,7 @@ class TestSkipExecution:
 
 class TestSkipWithParameterizedTests:
     def test_skip_applies_to_all_variations(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         VALUES = ForEach([1, 2, 3])  # noqa: N806 - test constant for parametrization
@@ -152,7 +152,7 @@ class TestSkipWithParameterizedTests:
         assert executed == []
 
     def test_skip_counts_all_variations(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):

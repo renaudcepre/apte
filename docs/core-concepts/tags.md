@@ -1,6 +1,6 @@
 # Tags
 
-Tags allow you to categorize and filter tests. ProTest's tag system includes **automatic tag inheritance from fixtures**.
+Tags allow you to categorize and filter tests. Apte's tag system includes **automatic tag inheritance from fixtures**.
 
 ## Declaring Tags
 
@@ -25,7 +25,7 @@ session.bind(db)
 ### On Suites
 
 ```python
-api_suite = ProTestSuite("API", tags=["api"])
+api_suite = ApteSuite("API", tags=["api"])
 ```
 
 Suite tags are inherited by all tests in the suite (and child suites).
@@ -117,7 +117,7 @@ A test's effective tags are the union of:
 3. Tags inherited from all fixtures (transitively)
 
 ```python
-api_suite = ProTestSuite("API", tags=["api"])
+api_suite = ApteSuite("API", tags=["api"])
 
 @fixture(tags=["database"])
 def db(): ...
@@ -138,10 +138,10 @@ Run only tests with specific tags:
 
 ```bash
 # Run tests tagged "database"
-protest run tests:session -t database
+apte run tests:session -t database
 
 # Multiple tags use OR logic
-protest run tests:session -t unit -t integration  # unit OR integration
+apte run tests:session -t unit -t integration  # unit OR integration
 ```
 
 ### Exclude Tags (--no-tag)
@@ -150,20 +150,20 @@ Skip tests with specific tags:
 
 ```bash
 # Skip all tests touching the database
-protest run tests:session --no-tag database
+apte run tests:session --no-tag database
 
 # Skip slow and flaky tests
-protest run tests:session --no-tag slow --no-tag flaky
+apte run tests:session --no-tag slow --no-tag flaky
 ```
 
 ### Combining Filters
 
 ```bash
 # API tests that don't touch the database
-protest run tests:session::API --no-tag database
+apte run tests:session::API --no-tag database
 
 # Integration tests excluding flaky ones
-protest run tests:session -t integration --no-tag flaky
+apte run tests:session -t integration --no-tag flaky
 ```
 
 ## Listing Tags
@@ -171,7 +171,7 @@ protest run tests:session -t integration --no-tag flaky
 See all tags declared in a session:
 
 ```bash
-protest tags list tests:session
+apte tags list tests:session
 ```
 
 Output:
@@ -185,7 +185,7 @@ slow
 Show effective tags per test (including inherited):
 
 ```bash
-protest tags list tests:session -r
+apte tags list tests:session -r
 ```
 
 Output:
@@ -215,7 +215,7 @@ def storage(): ...
 
 Run tests without external dependencies:
 ```bash
-protest run tests:session --no-tag database --no-tag redis --no-tag s3
+apte run tests:session --no-tag database --no-tag redis --no-tag s3
 ```
 
 ### Speed Tags
@@ -230,7 +230,7 @@ async def test_full_migration():
 
 Quick feedback loop:
 ```bash
-protest run tests:session --no-tag slow
+apte run tests:session --no-tag slow
 ```
 
 ### Environment Tags
@@ -247,5 +247,5 @@ async def test_deployment(): ...
 
 Run locally (no Docker):
 ```bash
-protest run tests:session --no-tag requires-docker
+apte run tests:session --no-tag requires-docker
 ```

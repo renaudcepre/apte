@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
+from apte import ApteSuite, FixtureFactory, Use
 from examples.yorkshire.app.domain import Coat, Job, Size, Yorkshire
 from examples.yorkshire.tests.fixtures import yorkshire
-from protest import FixtureFactory, ProTestSuite, Use
 
-puppies_suite = ProTestSuite("Puppies", tags=["puppy"])
+puppies_suite = ApteSuite("Puppies", tags=["puppy"])
 
 
 @puppies_suite.test()

@@ -1,6 +1,6 @@
 """Yorkshire-specific evaluators.
 
-Generic evaluators come from protest.evals.evaluators.
+Generic evaluators come from apte.evals.evaluators.
 Only project-specific ones live here.
 
 These also demonstrate how EvalContext generics document
@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from protest.evals import EvalContext, Metric, Verdict, evaluator
+from apte.evals import EvalContext, Metric, Verdict, evaluator
 
 # --- Text evaluator: EvalContext[Any, str] ---------------------------------
 # Most evaluators work on text output. The first type param (inputs) is Any

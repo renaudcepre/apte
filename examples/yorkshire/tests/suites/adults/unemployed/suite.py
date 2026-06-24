@@ -2,12 +2,12 @@
 
 from typing import Annotated
 
+from apte import ApteSuite, FixtureFactory, Use
 from examples.yorkshire.app.domain import Job, Yorkshire
 from examples.yorkshire.app.kennel import Kennel
 from examples.yorkshire.tests.fixtures import kennel, yorkshire
-from protest import FixtureFactory, ProTestSuite, Use
 
-unemployed_suite = ProTestSuite("Unemployed")
+unemployed_suite = ApteSuite("Unemployed")
 
 
 @unemployed_suite.test()

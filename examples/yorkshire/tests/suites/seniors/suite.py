@@ -3,11 +3,11 @@
 import asyncio
 from typing import Annotated
 
+from apte import ApteSuite, FixtureFactory, Retry, Use
 from examples.yorkshire.app.domain import Coat, Job, Size, Yorkshire
 from examples.yorkshire.tests.fixtures import yorkshire
-from protest import FixtureFactory, ProTestSuite, Retry, Use
 
-seniors_suite = ProTestSuite("Seniors", tags=["senior"])
+seniors_suite = ApteSuite("Seniors", tags=["senior"])
 
 
 @seniors_suite.test()

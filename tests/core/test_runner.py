@@ -1,11 +1,11 @@
 import asyncio
 from typing import Annotated
 
-from protest import ProTestSession, ProTestSuite, Use
-from protest.core.runner import TestRunner
-from protest.di.decorators import fixture
-from protest.entities import SuitePath, TestItem, TestRegistration
-from protest.plugin import PluginBase
+from apte import ApteSession, ApteSuite, Use
+from apte.core.runner import TestRunner
+from apte.di.decorators import fixture
+from apte.entities import SuitePath, TestItem, TestRegistration
+from apte.plugin import PluginBase
 from tests.conftest import (
     CollectedEvents,
     ConcurrencyTracker,
@@ -18,7 +18,7 @@ class TestRunnerBasics:
 
     def test_runner_with_passing_test(self) -> None:
         """Runner returns True when all tests pass."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def passing_test() -> None:
@@ -31,7 +31,7 @@ class TestRunnerBasics:
 
     def test_runner_with_failing_test(self) -> None:
         """Runner returns False when any test fails."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def failing_test() -> None:
@@ -44,7 +44,7 @@ class TestRunnerBasics:
 
     def test_runner_with_mixed_results(self) -> None:
         """Runner returns False if any test fails."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def passing_test() -> None:
@@ -61,7 +61,7 @@ class TestRunnerBasics:
 
     def test_runner_with_no_tests(self) -> None:
         """Runner returns True when no tests to run."""
-        session = ProTestSession()
+        session = ApteSession()
         runner = TestRunner(session)
         result = runner.run()
 
@@ -76,7 +76,7 @@ class TestRunnerEvents:
     ) -> None:
         """Runner emits SESSION_START, SESSION_END, SESSION_COMPLETE."""
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -95,7 +95,7 @@ class TestRunnerEvents:
     ) -> None:
         """Runner emits TEST_PASS for passing tests."""
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -115,7 +115,7 @@ class TestRunnerEvents:
     ) -> None:
         """Runner emits TEST_FAIL for failing tests."""
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -136,7 +136,7 @@ class TestRunnerWithFixtures:
 
     def test_runner_injects_session_fixtures(self) -> None:
         """Runner injects session-scoped fixtures into tests."""
-        session = ProTestSession()
+        session = ApteSession()
         received_value: list[str] = []
 
         @fixture()
@@ -156,7 +156,7 @@ class TestRunnerWithFixtures:
 
     def test_runner_handles_generator_fixtures(self) -> None:
         """Runner handles generator fixtures with teardown."""
-        session = ProTestSession()
+        session = ApteSession()
         teardown_called = False
 
         @fixture()
@@ -182,8 +182,8 @@ class TestRunnerWithSuites:
 
     def test_runner_executes_suite_tests(self) -> None:
         """Runner executes tests in suites."""
-        session = ProTestSession()
-        suite = ProTestSuite("test_suite")
+        session = ApteSession()
+        suite = ApteSuite("test_suite")
         session.add_suite(suite)
 
         executed: list[str] = []
@@ -202,8 +202,8 @@ class TestRunnerWithSuites:
     ) -> None:
         """Runner emits SUITE_START and SUITE_END."""
         plugin, collected = event_collector
-        session = ProTestSession()
-        suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        suite = ApteSuite("my_suite")
         session.add_suite(suite)
         session.register_plugin(plugin)
 
@@ -222,8 +222,8 @@ class TestRunnerWithSuites:
 
     def test_runner_uses_suite_max_concurrency(self) -> None:
         """Suite max_concurrency caps effective concurrency."""
-        session = ProTestSession(concurrency=10)
-        suite = ProTestSuite("capped_suite", max_concurrency=1)
+        session = ApteSession(concurrency=10)
+        suite = ApteSuite("capped_suite", max_concurrency=1)
         session.add_suite(suite)
 
         execution_order: list[int] = []
@@ -245,8 +245,8 @@ class TestRunnerWithSuites:
     def test_suite_max_concurrency_takes_min_with_session(self) -> None:
         """Effective concurrency is min(session, suite.max_concurrency)."""
         # Given: session with concurrency=2, suite with higher max_concurrency=10
-        session = ProTestSession(concurrency=2)
-        suite = ProTestSuite("high_cap_suite", max_concurrency=10)
+        session = ApteSession(concurrency=2)
+        suite = ApteSuite("high_cap_suite", max_concurrency=10)
         session.add_suite(suite)
         tracker = ConcurrencyTracker()
 
@@ -267,8 +267,8 @@ class TestRunnerParallelExecution:
     def test_runner_respects_concurrency_limit(self) -> None:
         """Runner limits concurrent tests to session.concurrency."""
         # Given: session with concurrency=2 and 3 tests
-        session = ProTestSession(concurrency=2)
-        suite = ProTestSuite("test_suite")
+        session = ApteSession(concurrency=2)
+        suite = ApteSuite("test_suite")
         session.add_suite(suite)
         tracker = ConcurrencyTracker()
 
@@ -291,7 +291,7 @@ class TestRunnerCollectionEvent:
     ) -> None:
         """COLLECTION_FINISH event is emitted with collected items."""
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -310,7 +310,7 @@ class TestRunnerCollectionEvent:
 
     def test_collection_finish_can_filter_tests(self) -> None:
         """COLLECTION_FINISH handler can filter which tests run."""
-        session = ProTestSession()
+        session = ApteSession()
         executed: list[str] = []
 
         class FilterPlugin(PluginBase):
@@ -342,8 +342,8 @@ class TestRunnerSmartTeardown:
 
     def test_suite_fixture_available_throughout_suite_tests(self) -> None:
         """Suite-scoped fixture remains available for all suite tests."""
-        session = ProTestSession()
-        suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        suite = ApteSuite("my_suite")
         session.add_suite(suite)
 
         @fixture()
@@ -371,8 +371,8 @@ class TestRunnerSmartTeardown:
 
     def test_suite_teardown_called_after_all_suite_tests(self) -> None:
         """Suite generator fixture teardown runs after all suite tests complete."""
-        session = ProTestSession()
-        suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        suite = ApteSuite("my_suite")
         session.add_suite(suite)
 
         teardown_at_test_count = -1
@@ -409,9 +409,9 @@ class TestRunnerNestedSuites:
 
     def test_runner_executes_nested_suite_tests(self) -> None:
         """Runner executes tests in nested suites."""
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -433,9 +433,9 @@ class TestRunnerNestedSuites:
 
     def test_nested_suite_uses_parent_fixture(self) -> None:
         """Nested suite tests can use parent suite's fixtures."""
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -463,7 +463,7 @@ class TestRunnerExitFirst:
     def test_exitfirst_stops_after_first_failure(self) -> None:
         """With exitfirst=True, remaining tests are cancelled after first failure."""
         # Given: session with exitfirst enabled and mix of fast/slow tests
-        session = ProTestSession(concurrency=4)
+        session = ApteSession(concurrency=4)
         session.exitfirst = True
         executed: list[str] = []
 
@@ -503,7 +503,7 @@ class TestRunnerExitFirst:
 
     def test_exitfirst_false_runs_all_tests(self) -> None:
         """With exitfirst=False (default), all tests run even after failure."""
-        session = ProTestSession(concurrency=4)
+        session = ApteSession(concurrency=4)
         session.exitfirst = False
 
         executed: list[str] = []
@@ -532,7 +532,7 @@ class TestRunnerExitFirst:
 
     def test_exitfirst_stops_on_error(self) -> None:
         """exitfirst also stops on fixture errors."""
-        session = ProTestSession(concurrency=4)
+        session = ApteSession(concurrency=4)
         session.exitfirst = True
 
         executed: list[str] = []
@@ -561,11 +561,11 @@ class TestRunnerExitFirst:
 
     def test_exitfirst_across_chunks(self) -> None:
         """exitfirst stops processing subsequent chunks."""
-        session = ProTestSession(concurrency=1)
+        session = ApteSession(concurrency=1)
         session.exitfirst = True
 
-        suite1 = ProTestSuite("Suite1")
-        suite2 = ProTestSuite("Suite2")
+        suite1 = ApteSuite("Suite1")
+        suite2 = ApteSuite("Suite2")
         session.add_suite(suite1)
         session.add_suite(suite2)
 
@@ -592,7 +592,7 @@ class TestRunnerTypeHintFailure:
 
     def test_runner_handles_invalid_type_hints_gracefully(self) -> None:
         """Test with invalid type hint that causes get_type_hints to fail still runs."""
-        session = ProTestSession()
+        session = ApteSession()
         executed: list[str] = []
 
         # Create a test function and manually set an invalid forward reference

@@ -1,6 +1,6 @@
 import logging
 
-from protest.entities import LogCapture
+from apte.entities import LogCapture
 
 
 class TestLogCapture:

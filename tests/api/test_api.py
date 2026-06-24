@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from protest import (
-    ProTestSession,
-    ProTestSuite,
+from apte import (
+    ApteSession,
+    ApteSuite,
     collect_tests,
     fixture,
     list_tags,
@@ -12,7 +12,7 @@ from protest import (
 
 class TestRunSession:
     def test_run_session_all_passing(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_one() -> None:
@@ -26,7 +26,7 @@ class TestRunSession:
         assert result.success is True
 
     def test_run_session_with_failure(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_passing() -> None:
@@ -40,7 +40,7 @@ class TestRunSession:
         assert result.success is False
 
     def test_run_session_with_concurrency(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         async def test_concurrent_0() -> None:
@@ -58,7 +58,7 @@ class TestRunSession:
         assert result.success is True
 
     def test_run_session_exitfirst(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         execution_order: list[str] = []
 
         @session.test()
@@ -77,7 +77,7 @@ class TestRunSession:
 
 class TestRunSessionTagFiltering:
     def test_include_tags(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(tags=["unit"])
         def test_unit() -> None:
@@ -91,7 +91,7 @@ class TestRunSessionTagFiltering:
         assert result.success is True
 
     def test_exclude_tags(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(tags=["unit"])
         def test_unit() -> None:
@@ -107,7 +107,7 @@ class TestRunSessionTagFiltering:
 
 class TestCollectTests:
     def test_collect_all_tests(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_one() -> None:
@@ -122,8 +122,8 @@ class TestCollectTests:
         assert len(items) == expected_count
 
     def test_collect_with_suites(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @session.test()
@@ -142,7 +142,7 @@ class TestCollectTests:
         assert any("MySuite::test_suite" in node_id for node_id in node_ids)
 
     def test_collect_with_tag_filter(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(tags=["unit"])
         def test_unit() -> None:
@@ -158,7 +158,7 @@ class TestCollectTests:
         assert "test_unit" in items[0].node_id
 
     def test_collect_with_exclude_tags(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(tags=["unit"])
         def test_unit() -> None:
@@ -176,7 +176,7 @@ class TestCollectTests:
 
 class TestListTags:
     def test_list_tags_from_tests(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(tags=["unit", "fast"])
         def test_one() -> None:
@@ -190,7 +190,7 @@ class TestListTags:
         assert tags == {"unit", "fast", "integration"}
 
     def test_list_tags_from_fixtures(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture(tags=["database"])
         def db_fixture() -> str:
@@ -206,8 +206,8 @@ class TestListTags:
         assert tags == {"database"}
 
     def test_list_tags_from_suites(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("API", tags=["api", "integration"])
+        session = ApteSession()
+        suite = ApteSuite("API", tags=["api", "integration"])
         session.add_suite(suite)
 
         @suite.test(tags=["slow"])
@@ -218,9 +218,9 @@ class TestListTags:
         assert tags == {"api", "integration", "slow"}
 
     def test_list_tags_nested_suites(self) -> None:
-        session = ProTestSession()
-        parent = ProTestSuite("Parent", tags=["parent"])
-        child = ProTestSuite("Child", tags=["child"])
+        session = ApteSession()
+        parent = ApteSuite("Parent", tags=["parent"])
+        child = ApteSuite("Child", tags=["child"])
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -238,7 +238,7 @@ class TestListTags:
         assert tags == {"parent", "child", "fixture_tag", "test_tag"}
 
     def test_list_tags_empty_session(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_no_tags() -> None:

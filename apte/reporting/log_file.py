@@ -1,0 +1,111 @@
+"""Log file plugin - writes logging and stdout to .apte/"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, TextIO
+
+from typing_extensions import Self
+
+from apte.entities import SuitePath
+from apte.execution.capture import (
+    add_log_callback,
+    add_stdout_callback,
+    remove_log_callback,
+    remove_stdout_callback,
+)
+from apte.plugin import PluginBase, PluginContext
+
+if TYPE_CHECKING:
+    import logging
+    from argparse import ArgumentParser
+
+    from apte.core.session import ApteSession
+    from apte.entities import SessionResult
+
+_MIN_NODE_ID_PARTS = 2
+
+
+class LogFilePlugin(PluginBase):
+    """Writes logging and stdout to .apte/ for post-mortem debugging."""
+
+    name = "log-file"
+    description = "Write logs to .apte/"
+
+    def __init__(self, log_dir: Path | None = None) -> None:
+        self._log_dir = log_dir or Path(".apte")
+        self._log_file = self._log_dir / "last_run.log"
+        self._stdout_file = self._log_dir / "last_run_stdout"
+        self._log_handle: TextIO | None = None
+        self._stdout_handle: TextIO | None = None
+
+    @classmethod
+    def add_cli_options(cls, parser: ArgumentParser) -> None:
+        group = parser.add_argument_group(f"{cls.name} - {cls.description}")
+        group.add_argument(
+            "--no-log-file",
+            dest="no_log_file",
+            action="store_true",
+            help="Disable writing to .apte/last_run.log",
+        )
+
+    @classmethod
+    def activate(cls, ctx: PluginContext) -> Self | None:
+        if ctx.get("no_log_file", False):
+            return None
+        return cls()
+
+    def setup(self, session: ApteSession) -> None:
+        self._log_dir.mkdir(exist_ok=True)
+        self._log_handle = open(self._log_file, "w", encoding="utf-8")  # noqa: SIM115 - handle kept open for session
+        self._stdout_handle = open(self._stdout_file, "w", encoding="utf-8")  # noqa: SIM115 - handle kept open for session
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self._write_log(f"# Apte Log - {timestamp}\n\n")
+        self._write_stdout(f"# Apte Stdout - {timestamp}\n\n")
+
+    def on_session_start(self) -> None:
+        add_log_callback(self._on_log)
+        add_stdout_callback(self._on_stdout)
+
+    def _on_log(self, node_id: str, record: logging.LogRecord) -> None:
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        level = record.levelname
+        message = record.getMessage()
+        test_id = self._extract_test_id(node_id)
+        self._write_log(f"{timestamp} [{test_id}] {level}: {message}\n")
+
+    def _on_stdout(self, node_id: str, data: str) -> None:
+        if not data.strip():
+            return
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        test_id = self._extract_test_id(node_id)
+        for line in data.splitlines():
+            self._write_stdout(f"{timestamp} [{test_id}] {line}\n")
+
+    def _extract_test_id(self, node_id: str) -> str:
+        """Extract readable test id from full node_id."""
+        parts = node_id.split(SuitePath.SEPARATOR)
+        if len(parts) >= _MIN_NODE_ID_PARTS:
+            return SuitePath.SEPARATOR.join(parts[1:])
+        return node_id
+
+    def on_session_complete(self, result: SessionResult) -> None:
+        remove_log_callback(self._on_log)
+        remove_stdout_callback(self._on_stdout)
+        if self._log_handle:
+            self._log_handle.close()
+            self._log_handle = None
+        if self._stdout_handle:
+            self._stdout_handle.close()
+            self._stdout_handle = None
+
+    def _write_log(self, text: str) -> None:
+        if self._log_handle:
+            self._log_handle.write(text)
+            self._log_handle.flush()
+
+    def _write_stdout(self, text: str) -> None:
+        if self._stdout_handle:
+            self._stdout_handle.write(text)
+            self._stdout_handle.flush()

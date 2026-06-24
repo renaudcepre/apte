@@ -1,18 +1,21 @@
 """Yorkshire Terrier Unified Session - tests + evals in one session.
 
 Run all (tests + evals):
-    protest run examples.yorkshire.session:session
+    apte run examples.yorkshire.session:session
 
 Run only tests:
-    protest run examples.yorkshire.session:session
-    (protest run filters to kind=test)
+    apte run examples.yorkshire.session:session
+    (apte run filters to kind=test)
 
 Run only evals:
-    protest eval examples.yorkshire.session:session
+    apte eval examples.yorkshire.session:session
 """
 
 from typing import Annotated
 
+from apte import ApteSession, From
+from apte.evals import EvalCase, ModelLabel
+from apte.evals.suite import EvalSuite
 from examples.yorkshire.app.chatbot import yorkshire_chatbot
 from examples.yorkshire.evals.cases import suite_evaluators, yorkshire_cases
 from examples.yorkshire.tests.fixtures import (
@@ -28,11 +31,8 @@ from examples.yorkshire.tests.suites.puppies.suite import puppies_suite
 from examples.yorkshire.tests.suites.rate_limited import rate_limited_suite
 from examples.yorkshire.tests.suites.seniors.suite import seniors_suite
 from examples.yorkshire.tests.suites.showcase.suite import showcase_suite
-from protest import From, ProTestSession
-from protest.evals import EvalCase, ModelLabel
-from protest.evals.suite import EvalSuite
 
-session = ProTestSession(concurrency=4, history=True)
+session = ApteSession(concurrency=4, history=True)
 session.use(BarkPlugin)
 session.bind(configure_kennel_logging, autouse=True)
 session.bind(kennel)

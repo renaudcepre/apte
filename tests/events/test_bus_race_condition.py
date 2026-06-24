@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-from protest.events.bus import EventBus
-from protest.events.types import Event
+from apte.events.bus import EventBus
+from apte.events.types import Event
 
 
 class CounterPlugin:

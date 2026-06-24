@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide walks you through creating your first ProTest session in under 5 minutes.
+This guide walks you through creating your first Apte session in under 5 minutes.
 
 ## Create a Test File
 
@@ -8,13 +8,13 @@ Create `tests.py`:
 
 ```python
 from typing import Annotated
-from protest import ProTestSession, ProTestSuite, Use, fixture
+from apte import ApteSession, ApteSuite, Use, fixture
 
 # Create a session - the root of your test hierarchy
-session = ProTestSession()
+session = ApteSession()
 
 # Create a suite to group related tests
-api_suite = ProTestSuite("API")
+api_suite = ApteSuite("API")
 session.add_suite(api_suite)
 
 
@@ -40,10 +40,10 @@ async def test_url_is_https(cfg: Annotated[dict, Use(config)]):
 ## Run the Tests
 
 ```bash
-protest run tests:session
+apte run tests:session
 ```
 
-The format is `module:session_variable`. ProTest imports the module and looks for the session.
+The format is `module:session_variable`. Apte imports the module and looks for the session.
 
 You should see output like:
 
@@ -68,17 +68,17 @@ async def test_intentional_failure(cfg: Annotated[dict, Use(config)]):
 Run again:
 
 ```bash
-protest run tests:session
+apte run tests:session
 ```
 
-ProTest shows the assertion error with context.
+Apte shows the assertion error with context.
 
 ## Run Tests in Parallel
 
 For I/O-bound tests, parallelism can significantly speed things up:
 
 ```bash
-protest run tests:session -n 4
+apte run tests:session -n 4
 ```
 
 This runs up to 4 tests concurrently.

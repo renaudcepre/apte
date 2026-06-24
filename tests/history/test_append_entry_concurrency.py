@@ -16,7 +16,7 @@ import multiprocessing as mp
 import subprocess
 from pathlib import Path
 
-from protest.history.storage import append_entry, clean_dirty
+from apte.history.storage import append_entry, clean_dirty
 
 
 def _worker_append(args: tuple[str, int, int]) -> None:

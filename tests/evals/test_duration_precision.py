@@ -9,9 +9,9 @@ matching bug - it printed `0ms` for any sub-ms task.
 
 from __future__ import annotations
 
-from protest.evals.results_writer import _format_case_duration, _render_case
-from protest.evals.types import EvalCaseResult
-from protest.history.plugin import _serialize_eval_case
+from apte.evals.results_writer import _format_case_duration, _render_case
+from apte.evals.types import EvalCaseResult
+from apte.history.plugin import _serialize_eval_case
 
 
 def _make_case(duration: float) -> EvalCaseResult:

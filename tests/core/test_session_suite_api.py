@@ -5,12 +5,12 @@ from typing import Annotated
 
 import pytest
 
-from protest import ProTestSession, ProTestSuite, Use
-from protest.core.runner import TestRunner
-from protest.di.decorators import factory, fixture
-from protest.entities import SuitePath
-from protest.exceptions import PlainFunctionError
-from protest.execution.context import TestExecutionContext
+from apte import ApteSession, ApteSuite, Use
+from apte.core.runner import TestRunner
+from apte.di.decorators import factory, fixture
+from apte.entities import SuitePath
+from apte.exceptions import PlainFunctionError
+from apte.execution.context import TestExecutionContext
 
 
 class TestSessionSuiteAPI:
@@ -18,9 +18,9 @@ class TestSessionSuiteAPI:
 
     def test_session_and_suite_creation(self) -> None:
         """Basic creation and setup."""
-        session = ProTestSession()
-        suite_a = ProTestSuite("API Tests")
-        suite_b = ProTestSuite("Unit Tests")
+        session = ApteSession()
+        suite_a = ApteSuite("API Tests")
+        suite_b = ApteSuite("Unit Tests")
 
         session.add_suite(suite_a)
         session.add_suite(suite_b)
@@ -31,8 +31,8 @@ class TestSessionSuiteAPI:
 
     def test_test_registration(self) -> None:
         """Basic test registration should work."""
-        session = ProTestSession()
-        suite_a = ProTestSuite("Suite A")
+        session = ApteSession()
+        suite_a = ApteSuite("Suite A")
         session.add_suite(suite_a)
 
         @session.test()
@@ -50,9 +50,9 @@ class TestSessionSuiteAPI:
 
     def test_nested_suite_full_path(self) -> None:
         """Nested suites have correct full_path."""
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
-        grandchild = ProTestSuite("GrandChild")
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
+        grandchild = ApteSuite("GrandChild")
 
         parent.add_suite(child)
         child.add_suite(grandchild)
@@ -63,10 +63,8 @@ class TestSessionSuiteAPI:
 
     def test_suite_description(self) -> None:
         """Suite can have an optional description."""
-        suite_with_desc = ProTestSuite(
-            "API", description="Integration tests for REST API"
-        )
-        suite_without_desc = ProTestSuite("Unit")
+        suite_with_desc = ApteSuite("API", description="Integration tests for REST API")
+        suite_without_desc = ApteSuite("Unit")
 
         assert suite_with_desc.description == "Integration tests for REST API"
         assert suite_without_desc.description is None
@@ -80,7 +78,7 @@ class TestScopeAtBinding:
         """SESSION-scoped fixtures are cached once globally."""
         call_count = 0
 
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def database_connection() -> str:
@@ -103,9 +101,9 @@ class TestScopeAtBinding:
         """SUITE-scoped fixtures are cached separately per suite."""
         call_count = 0
 
-        session = ProTestSession()
-        suite_a = ProTestSuite("suite_a")
-        suite_b = ProTestSuite("suite_b")
+        session = ApteSession()
+        suite_a = ApteSuite("suite_a")
+        suite_b = ApteSuite("suite_b")
         session.add_suite(suite_a)
         session.add_suite(suite_b)
 
@@ -148,7 +146,7 @@ class TestScopeAtBinding:
         def simple_fixture() -> str:
             return "value"
 
-        session = ProTestSession()
+        session = ApteSession()
 
         async with session, TestExecutionContext(session.resolver) as ctx:
             with pytest.raises(PlainFunctionError) as exc_info:
@@ -160,7 +158,7 @@ class TestScopeAtBinding:
     @pytest.mark.asyncio
     async def test_fixture_with_dependencies(self) -> None:
         """Fixtures can depend on other fixtures via Use()."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def database() -> str:
@@ -183,8 +181,8 @@ class TestScopeAtBinding:
     async def test_mixed_scope_dependencies(self) -> None:
         """SESSION fixtures can be used by SUITE and TEST scoped fixtures."""
         # Given: session with nested scope fixtures (session -> suite -> test)
-        session = ProTestSession()
-        my_suite = ProTestSuite("my_suite")
+        session = ApteSession()
+        my_suite = ApteSuite("my_suite")
         session.add_suite(my_suite)
 
         @fixture()
@@ -225,7 +223,7 @@ class TestAutouse:
     async def test_session_autouse_resolved_at_session_start(self) -> None:
         """Session autouse fixtures are resolved when session starts."""
         setup_done = False
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def setup_database() -> str:
@@ -245,7 +243,7 @@ class TestAutouse:
     async def test_session_autouse_with_dependencies(self) -> None:
         """Session autouse fixtures can have dependencies on session fixtures."""
         log: list[str] = []
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def database() -> str:
@@ -270,8 +268,8 @@ class TestAutouse:
     async def test_suite_autouse_resolved_when_suite_starts(self) -> None:
         """Suite autouse fixtures are resolved when suite starts."""
         log: list[str] = []
-        session = ProTestSession()
-        suite = ProTestSuite("TestSuite")
+        session = ApteSession()
+        suite = ApteSuite("TestSuite")
         session.add_suite(suite)
 
         @fixture()
@@ -290,8 +288,8 @@ class TestAutouse:
     async def test_suite_autouse_can_use_session_fixture(self) -> None:
         """Suite autouse fixtures can depend on session fixtures."""
         log: list[str] = []
-        session = ProTestSession()
-        suite = ProTestSuite("TestSuite")
+        session = ApteSession()
+        suite = ApteSuite("TestSuite")
         session.add_suite(suite)
 
         @fixture()
@@ -318,8 +316,8 @@ class TestAutouse:
     async def test_suite_autouse_teardown_with_suite(self) -> None:
         """Suite autouse fixtures are torn down with the suite."""
         teardown_log: list[str] = []
-        session = ProTestSession()
-        suite = ProTestSuite("TestSuite")
+        session = ApteSession()
+        suite = ApteSuite("TestSuite")
         session.add_suite(suite)
 
         @fixture()
@@ -345,9 +343,9 @@ class TestAutouse:
         - Accessible by child suites via ancestry check
         """
         call_counts: dict[str, int] = {"parent": 0, "child": 0}
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -385,8 +383,8 @@ class TestSuiteTeardown:
         """SUITE-scoped fixtures are torn down when suite ends."""
         teardown_log: list[str] = []
 
-        session = ProTestSession()
-        test_suite = ProTestSuite("test_suite")
+        session = ApteSession()
+        test_suite = ApteSuite("test_suite")
         session.add_suite(test_suite)
 
         @fixture()
@@ -410,8 +408,8 @@ class TestSuiteTeardown:
         """Suite cache is cleared after teardown."""
         call_count = 0
 
-        session = ProTestSession()
-        suite = ProTestSuite("suite")
+        session = ApteSession()
+        suite = ApteSuite("suite")
         session.add_suite(suite)
 
         @fixture()
@@ -444,9 +442,9 @@ class TestNestedSuites:
     @pytest.mark.asyncio
     async def test_nested_suite_can_use_parent_fixture(self) -> None:
         """Child suite can depend on parent suite's fixtures."""
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -474,9 +472,9 @@ class TestNestedSuites:
     @pytest.mark.asyncio
     async def test_child_suite_can_use_session_fixture(self) -> None:
         """Deeply nested suite can use session fixtures."""
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -505,8 +503,8 @@ class TestNestedSuites:
 class TestSuiteFactory:
     @pytest.mark.asyncio
     async def test_suite_factory_basic(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @factory()
@@ -526,8 +524,8 @@ class TestSuiteFactory:
     @pytest.mark.asyncio
     async def test_suite_factory_with_cache_false(self) -> None:
         call_count = 0
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @factory(cache=False)
@@ -551,8 +549,8 @@ class TestSuiteFactory:
 
     @pytest.mark.asyncio
     async def test_suite_factory_with_managed_false(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("MySuite")
+        session = ApteSession()
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         class UserFactory:
@@ -576,23 +574,23 @@ class TestSuiteFactory:
 
 class TestSuiteAddAfterAttach:
     def test_add_suite_after_session_attach(self) -> None:
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
         session.add_suite(parent)
 
-        child = ProTestSuite("Child")
+        child = ApteSuite("Child")
         parent.add_suite(child)
 
         assert child._parent_suite is parent
         assert child._session is session
 
     def test_add_deeply_nested_after_attach(self) -> None:
-        session = ProTestSession()
-        parent = ProTestSuite("Parent")
+        session = ApteSession()
+        parent = ApteSuite("Parent")
         session.add_suite(parent)
 
-        child = ProTestSuite("Child")
-        grandchild = ProTestSuite("GrandChild")
+        child = ApteSuite("Child")
+        grandchild = ApteSuite("GrandChild")
         child.add_suite(grandchild)
         parent.add_suite(child)
 
@@ -612,7 +610,7 @@ class TestFixtureBinding:
         def config() -> str:
             return "session_config"
 
-        session = ProTestSession()
+        session = ApteSession()
         session.bind(config)  # SESSION scope
 
         async with session:
@@ -632,7 +630,7 @@ class TestFixtureBinding:
             setup_done = True
             return "initialized"
 
-        session = ProTestSession()
+        session = ApteSession()
         session.bind(auto_setup, autouse=True)  # SESSION + autouse
 
         assert setup_done is False
@@ -649,8 +647,8 @@ class TestFixtureBinding:
         def suite_resource() -> str:
             return "suite_data"
 
-        session = ProTestSession()
-        suite = ProTestSuite("TestSuite")
+        session = ApteSession()
+        suite = ApteSuite("TestSuite")
         suite.bind(suite_resource)  # SUITE scope
         session.add_suite(suite)
 
@@ -667,7 +665,7 @@ class TestFixtureBinding:
         def plain_func() -> str:
             return "plain"
 
-        session = ProTestSession()
+        session = ApteSession()
 
         with pytest.raises(ValueError, match="not decorated"):
             session.bind(plain_func)
@@ -690,9 +688,9 @@ class TestNestedSuiteFixtureLifetime:
 
         call_count = 0
 
-        session = ProTestSession(concurrency=1)
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession(concurrency=1)
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 
@@ -734,9 +732,9 @@ class TestNestedSuiteFixtureLifetime:
 
         teardown_order: list[str] = []
 
-        session = ProTestSession(concurrency=1)
-        parent = ProTestSuite("Parent")
-        child = ProTestSuite("Child")
+        session = ApteSession(concurrency=1)
+        parent = ApteSuite("Parent")
+        child = ApteSuite("Child")
         parent.add_suite(child)
         session.add_suite(parent)
 

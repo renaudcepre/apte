@@ -1,24 +1,24 @@
 """Yorkshire Chatbot Evals - evaluate the fake Yorkshire expert chatbot.
 
 Run with:
-    protest eval examples.yorkshire.evals.session:session
-    protest eval examples.yorkshire.evals.session:session -n 4
-    protest eval examples.yorkshire.evals.session:session --tag safety
-    protest eval examples.yorkshire.evals.session:session --last-failed
+    apte eval examples.yorkshire.evals.session:session
+    apte eval examples.yorkshire.evals.session:session -n 4
+    apte eval examples.yorkshire.evals.session:session --tag safety
+    apte eval examples.yorkshire.evals.session:session --last-failed
 """
 
 from typing import Annotated
 
+from apte import ApteSession, From
+from apte.evals import EvalCase, ModelLabel
+from apte.evals.suite import EvalSuite
 from examples.yorkshire.app.chatbot import yorkshire_chatbot
 from examples.yorkshire.evals.cases import (
     suite_evaluators,
     yorkshire_cases,
 )
-from protest import From, ProTestSession
-from protest.evals import EvalCase, ModelLabel
-from protest.evals.suite import EvalSuite
 
-session = ProTestSession(
+session = ApteSession(
     metadata={"version": "1.0", "type": "keyword-matching"},
 )
 

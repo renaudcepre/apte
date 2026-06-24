@@ -1,6 +1,6 @@
 # Project Organization
 
-How to structure a real ProTest project with multiple files, suites, and fixtures.
+How to structure a real Apte project with multiple files, suites, and fixtures.
 
 ## The Recommended Pattern
 
@@ -34,11 +34,11 @@ Each test file creates a suite, registers its tests, and **exports** the suite o
 # tests/domain/test_users.py
 from typing import Annotated
 
-from protest import FixtureFactory, ProTestSuite, Use, factory
+from apte import FixtureFactory, ApteSuite, Use, factory
 
 from myapp.domain import User
 
-users_suite = ProTestSuite("Users", tags=["domain"])
+users_suite = ApteSuite("Users", tags=["domain"])
 
 @factory(cache=False)
 def user(name: str = "Alice", role: str = "member") -> User:
@@ -70,12 +70,12 @@ For nested hierarchies, a parent suite imports its children:
 
 ```python
 # tests/api/suite.py
-from protest import ProTestSuite
+from apte import ApteSuite
 
 from tests.api.test_users_api import users_api_suite
 from tests.api.test_orders_api import orders_api_suite
 
-api_suite = ProTestSuite("API", tags=["api"])
+api_suite = ApteSuite("API", tags=["api"])
 api_suite.add_suite(users_api_suite)
 api_suite.add_suite(orders_api_suite)
 ```
@@ -88,7 +88,7 @@ The session file is thin - just imports and registration:
 
 ```python
 # tests/session.py
-from protest import ProTestSession
+from apte import ApteSession
 
 from tests.fixtures.database import database
 from tests.fixtures.users import user
@@ -96,7 +96,7 @@ from tests.domain.test_users import users_suite
 from tests.domain.test_orders import orders_suite
 from tests.api.suite import api_suite
 
-session = ProTestSession(concurrency=4)
+session = ApteSession(concurrency=4)
 
 # Bind session-scoped fixtures
 session.bind(database)
@@ -114,19 +114,19 @@ Every import is **consumed** by `.bind()` or `.add_suite()`. No unused imports, 
 
 ```bash
 # All tests
-protest run tests.session:session
+apte run tests.session:session
 
 # Just the API suite
-protest run tests.session:session::API
+apte run tests.session:session::API
 
 # Nested suite
-protest run tests.session:session::API::Users
+apte run tests.session:session::API::Users
 
 # By tag
-protest run tests.session:session -t domain
+apte run tests.session:session -t domain
 
 # By keyword
-protest run tests.session:session -k "change_role"
+apte run tests.session:session -k "change_role"
 ```
 
 ## Why This Pattern Works
@@ -145,10 +145,10 @@ When a test module doesn't export its suite but instead reaches into the session
 
 ```python
 # DON'T DO THIS - tests/session.py
-from protest import ProTestSession, ProTestSuite
+from apte import ApteSession, ApteSuite
 
-session = ProTestSession()
-domain_suite = ProTestSuite("Domain")
+session = ApteSession()
+domain_suite = ApteSuite("Domain")
 session.add_suite(domain_suite)
 
 # Side-effect imports: importing for registration, not for the value
@@ -175,14 +175,14 @@ Problems:
 ```python
 # DON'T DO THIS
 # tests/test_users.py
-session = ProTestSession()
-suite = ProTestSuite("Users")
+session = ApteSession()
+suite = ApteSuite("Users")
 session.add_suite(suite)
 # ...
 
 # tests/test_orders.py
-session = ProTestSession()  # Another session!
-suite = ProTestSuite("Orders")
+session = ApteSession()  # Another session!
+suite = ApteSuite("Orders")
 session.add_suite(suite)
 ```
 
@@ -190,11 +190,11 @@ Problems:
 - No shared fixtures between sessions
 - Can't run all tests at once
 - No suite hierarchy
-- Multiple `protest run` commands needed
+- Multiple `apte run` commands needed
 
 ## Real-World Example
 
-The [Yorkshire example](https://github.com/renaudcepre/protest/tree/main/examples/yorkshire) demonstrates this pattern at scale:
+The [Yorkshire example](https://github.com/renaudcepre/apte/tree/main/examples/yorkshire) demonstrates this pattern at scale:
 
 ```
 yorkshire/tests/
@@ -220,7 +220,7 @@ The session file imports each suite and registers it - every import consumed, ze
 
 - **One file = one leaf suite.** Each test file defines exactly one suite. Intermediate suites (parents) live in `suite.py` files that assemble children.
 
-- **Name suites after your domain**, not after the file structure. `ProTestSuite("Users")`, not `ProTestSuite("TestUsers")`.
+- **Name suites after your domain**, not after the file structure. `ApteSuite("Users")`, not `ApteSuite("TestUsers")`.
 
 ## See Also
 

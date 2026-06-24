@@ -1,4 +1,4 @@
-"""Tests for `protest.console.print` - payload shape and reporter formatting.
+"""Tests for `apte.console.print` - payload shape and reporter formatting.
 
 `console.print(msg, raw=False, prefix=True)` builds a 3-tuple payload
 `(msg, raw, prefix)` dispatched on USER_PRINT. Each reporter unpacks the
@@ -19,18 +19,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from protest import console
-from protest.events.types import Event
-from protest.reporting.ascii import AsciiReporter
-from protest.reporting.rich_reporter import RichReporter
+from apte import console
+from apte.events.types import Event
+from apte.reporting.ascii import AsciiReporter
+from apte.reporting.rich_reporter import RichReporter
 
 
 @pytest.fixture
 def stdout_buffer(monkeypatch: pytest.MonkeyPatch) -> io.StringIO:
     buf = io.StringIO()
     # `real_stdout()` is what reporters write to; patch at both reporter modules.
-    monkeypatch.setattr("protest.reporting.ascii.real_stdout", lambda: buf)
-    monkeypatch.setattr("protest.reporting.rich_reporter.real_stdout", lambda: buf)
+    monkeypatch.setattr("apte.reporting.ascii.real_stdout", lambda: buf)
+    monkeypatch.setattr("apte.reporting.rich_reporter.real_stdout", lambda: buf)
     return buf
 
 
@@ -85,7 +85,7 @@ class TestConsolePrintPayload:
         handler = MagicMock()
         handler.func = lambda payload: captured.append(payload)
         bus._handlers = {Event.USER_PRINT: [handler]}
-        monkeypatch.setattr("protest.console.get_event_bus", lambda: bus)
+        monkeypatch.setattr("apte.console.get_event_bus", lambda: bus)
         return captured
 
     def test_default_payload_carries_prefix_true(
@@ -125,13 +125,13 @@ class TestConsolePrintHandlerErrors:
 
         handler.func = boom
         bus._handlers = {Event.USER_PRINT: [handler]}
-        monkeypatch.setattr("protest.console.get_event_bus", lambda: bus)
+        monkeypatch.setattr("apte.console.get_event_bus", lambda: bus)
 
     def test_handler_exception_is_surfaced_on_stderr(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         stderr = io.StringIO()
-        monkeypatch.setattr("protest.console.real_stderr", lambda: stderr)
+        monkeypatch.setattr("apte.console.real_stderr", lambda: stderr)
         self._bus_with_failing_handler(monkeypatch, RuntimeError("boom"))
 
         console.print("anything")
@@ -149,7 +149,7 @@ class TestConsolePrintHandlerErrors:
         def raising_stderr() -> object:
             raise OSError("stderr broken")
 
-        monkeypatch.setattr("protest.console.real_stderr", raising_stderr)
+        monkeypatch.setattr("apte.console.real_stderr", raising_stderr)
         self._bus_with_failing_handler(monkeypatch, RuntimeError("boom"))
 
         # Must not raise - the outer suppress() is the last line of defense.
@@ -159,13 +159,13 @@ class TestConsolePrintHandlerErrors:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         stderr = io.StringIO()
-        monkeypatch.setattr("protest.console.real_stderr", lambda: stderr)
+        monkeypatch.setattr("apte.console.real_stderr", lambda: stderr)
 
         bus = MagicMock()
         handler = MagicMock()
         handler.func = lambda _payload: None  # no-op, no raise
         bus._handlers = {Event.USER_PRINT: [handler]}
-        monkeypatch.setattr("protest.console.get_event_bus", lambda: bus)
+        monkeypatch.setattr("apte.console.get_event_bus", lambda: bus)
 
         console.print("ok")
         assert stderr.getvalue() == ""

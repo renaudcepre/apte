@@ -1,8 +1,8 @@
 import asyncio
 
-from protest import ProTestSession
+from apte import ApteSession
 
-session = ProTestSession()
+session = ApteSession()
 session.register_default_plugins()
 
 

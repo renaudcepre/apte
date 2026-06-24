@@ -14,7 +14,7 @@ wheels/
 .claude/
 /.coverage
 
-.protest/
+.apte/
 /ctrf-report.json
 
 # Web reporter

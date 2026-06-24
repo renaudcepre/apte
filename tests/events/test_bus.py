@@ -4,9 +4,9 @@ import asyncio
 
 import pytest
 
-from protest.entities import HandlerInfo
-from protest.events.bus import EventBus
-from protest.events.types import Event
+from apte.entities import HandlerInfo
+from apte.events.bus import EventBus
+from apte.events.types import Event
 
 
 class TestHandlerRegistration:

@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from protest.execution.capture import (
+from apte.execution.capture import (
     CaptureCurrentTest,
     GlobalCapturePatch,
     TaskAwareLogHandler,

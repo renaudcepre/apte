@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 from unittest.mock import patch
 
-from protest.reporting.ascii import AsciiReporter
-from protest.reporting.factory import get_reporter
+from apte.reporting.ascii import AsciiReporter
+from apte.reporting.factory import get_reporter
 
 
 class TestGetReporter:
@@ -28,7 +28,7 @@ class TestGetReporter:
         with patch("rich.console.Console"):
             reporter = get_reporter()
 
-        from protest.reporting.rich_reporter import RichReporter
+        from apte.reporting.rich_reporter import RichReporter
 
         assert isinstance(reporter, RichReporter)
 

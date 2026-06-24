@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-from protest import FixtureFactory, ProTestSession, Use
-from protest.core.runner import TestRunner
-from protest.di.decorators import factory
-from protest.plugin import PluginBase
+from apte import ApteSession, FixtureFactory, Use
+from apte.core.runner import TestRunner
+from apte.di.decorators import factory
+from apte.plugin import PluginBase
 from tests.conftest import CollectedEvents
 
 
@@ -16,7 +16,7 @@ class TestFactoryErrorDistinction:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory()
@@ -48,7 +48,7 @@ class TestFactoryErrorDistinction:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -69,7 +69,7 @@ class TestFactoryErrorDistinction:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         def broken_fixture() -> str:
@@ -97,7 +97,7 @@ class TestFactoryErrorDistinction:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory()
@@ -141,7 +141,7 @@ class TestFactoryErrorPreservesOriginal:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory()
@@ -172,7 +172,7 @@ class TestAsyncFactoryErrors:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory()
@@ -204,7 +204,7 @@ class TestFactoryWithTeardown:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         teardown_called = []
@@ -239,7 +239,7 @@ class TestFactoryCaching:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0
@@ -274,7 +274,7 @@ class TestFactoryCaching:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0

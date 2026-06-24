@@ -1,6 +1,6 @@
 # Architecture Overview
 
-ProTest follows a Ports & Adapters (hexagonal) architecture, separating the domain logic from external interfaces.
+Apte follows a Ports & Adapters (hexagonal) architecture, separating the domain logic from external interfaces.
 
 ## Layers
 
@@ -22,8 +22,8 @@ ProTest follows a Ports & Adapters (hexagonal) architecture, separating the doma
                          ▼
 ┌─────────────────────────────────────────────────────────┐
 │                      Domain                             │
-│  ProTestSession  TestRunner  Collector  FixtureContainer        │
-│  ProTestSuite    EventBus                               │
+│  ApteSession  TestRunner  Collector  FixtureContainer        │
+│  ApteSuite    EventBus                               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -33,21 +33,21 @@ The core test execution logic, independent of how tests are discovered or result
 
 | Component | Location | Responsibility |
 |-----------|----------|----------------|
-| `ProTestSession` | `core/session.py` | Test session container |
-| `ProTestSuite` | `core/suite.py` | Test grouping |
+| `ApteSession` | `core/session.py` | Test session container |
+| `ApteSuite` | `core/suite.py` | Test grouping |
 | `TestRunner` | `core/runner.py` | Test execution |
 | `Collector` | `core/collector.py` | Test discovery |
 | `FixtureContainer` | `di/container.py` | Fixture resolution |
 | `EventBus` | `events/bus.py` | Event dispatching |
 
-## Ports Layer (`protest/api.py`)
+## Ports Layer (`apte/api.py`)
 
 The public API for programmatic use. These functions don't depend on any specific adapter.
 
 ```python
-from protest import ProTestSession, run_session, collect_tests, list_tags
+from apte import ApteSession, run_session, collect_tests, list_tags
 
-session = ProTestSession()
+session = ApteSession()
 # ... define tests ...
 
 # Run tests
@@ -60,12 +60,12 @@ items = collect_tests(session, include_tags={"unit"})
 tags = list_tags(session)
 ```
 
-### Loader (`protest/loader.py`)
+### Loader (`apte/loader.py`)
 
 Loads sessions from module paths:
 
 ```python
-from protest import load_session, LoadError
+from apte import load_session, LoadError
 
 try:
     session = load_session("mymodule:session", app_dir="src")
@@ -75,13 +75,13 @@ except LoadError as e:
 
 ## Adapters Layer
 
-### CLI (`protest/cli/`)
+### CLI (`apte/cli/`)
 
 Entry point for command-line usage. Parses arguments and calls the API.
 
 ```bash
-protest run module:session [options]
-protest tags list module:session
+apte run module:session [options]
+apte tags list module:session
 ```
 
 The CLI is a thin wrapper that:
@@ -108,7 +108,7 @@ Custom extensions that hook into the event bus:
 ## Module Structure
 
 ```
-protest/
+apte/
 ├── core/           # Domain: Session, Suite, Runner, Collector
 ├── di/             # Domain: FixtureContainer, Markers (Use), Validation
 ├── entities/       # Domain: Dataclasses (Fixture, TestItem, TestResult)

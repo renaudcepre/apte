@@ -3,9 +3,9 @@ from typing import Annotated
 
 import pytest
 
-from protest import Mocker, ProTestSession, Use, mocker
-from protest.core.runner import TestRunner
-from protest.plugin import PluginBase
+from apte import ApteSession, Mocker, Use, mocker
+from apte.core.runner import TestRunner
+from apte.plugin import PluginBase
 from tests.conftest import CollectedEvents
 
 
@@ -26,7 +26,7 @@ class TestMockerFixture:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @session.test()
@@ -48,7 +48,7 @@ class TestMockerFixture:
         assert len(collected.test_passes) == expected_pass_count
 
     def test_patch_object(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_object_patch(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -66,7 +66,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_patch_dict(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_dict_patch(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -81,7 +81,7 @@ class TestMockerFixture:
         assert "TEST_VAR" not in os.environ
 
     def test_patch_dict_clear(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         original_env_key = "PATH"
 
         @session.test()
@@ -99,7 +99,7 @@ class TestMockerFixture:
 
     def test_multiple_patches_all_cleaned_up(self) -> None:
         """Given multiple patches applied, when test completes, then all are restored."""
-        session = ProTestSession()
+        session = ApteSession()
         service = DummyService()
         original_external = external_function()
         original_service = service.get_value()
@@ -122,7 +122,7 @@ class TestMockerFixture:
         assert service.get_value() == original_service
 
     def test_stop_single(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_single_stop(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -141,7 +141,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_resetall(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_reset(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -165,7 +165,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_spy_tracks_calls_classic_style(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_spy(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -183,7 +183,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_spy_tracks_calls_bound_method_style(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_spy_bound(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -201,7 +201,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_spy_return(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_spy_return_value(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -222,7 +222,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_stub(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_stub_callable(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -240,7 +240,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_async_stub(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         async def test_async_stub_awaitable(
@@ -260,7 +260,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_create_autospec(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_autospec(mock_manager: Annotated[Mocker, Use(mocker)]) -> None:
@@ -278,7 +278,7 @@ class TestMockerFixture:
         assert result.success is True
 
     def test_isolation_between_tests(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         call_counts: list[int] = []
 
         @session.test()
@@ -307,7 +307,7 @@ class TestMockerFixture:
         self, event_collector: tuple[PluginBase, CollectedEvents]
     ) -> None:
         plugin, collected = event_collector
-        session = ProTestSession(concurrency=3)
+        session = ApteSession(concurrency=3)
         session.register_plugin(plugin)
 
         @session.test()
@@ -342,7 +342,7 @@ class TestMockerFixture:
         assert len(collected.test_passes) == expected_pass_count
 
     def test_teardown_on_test_failure(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         cleanup_verified = []
 
         class LocalService:

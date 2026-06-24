@@ -25,9 +25,9 @@ FAILED=0
 for example in "${EXAMPLES[@]}"; do
     echo ""
     echo "----------------------------------------"
-    echo "protest $example"
+    echo "apte $example"
     echo "----------------------------------------"
-    if uv run protest $example; then
+    if uv run apte $example; then
         echo "  OK"
     else
         echo "  FAILED (expected)"

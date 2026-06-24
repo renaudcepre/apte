@@ -4,16 +4,16 @@ from typing import Annotated
 
 import pytest
 
-from protest import ForEach, From, ProTestSession, ProTestSuite
-from protest.di.decorators import factory, fixture
-from protest.exceptions import ParameterizedFixtureError
+from apte import ApteSession, ApteSuite, ForEach, From
+from apte.di.decorators import factory, fixture
+from apte.exceptions import ParameterizedFixtureError
 
 ROLES = ForEach(["admin", "guest"])
 
 
 class TestSessionFixture:
     def test_fixture_with_from_raises_error(self) -> None:
-        ProTestSession()
+        ApteSession()
 
         with pytest.raises(ParameterizedFixtureError) as exc_info:
 
@@ -26,7 +26,7 @@ class TestSessionFixture:
         assert "From() is only allowed in tests" in str(exc_info.value)
 
     def test_factory_with_from_raises_error(self) -> None:
-        ProTestSession()
+        ApteSession()
 
         with pytest.raises(ParameterizedFixtureError) as exc_info:
 
@@ -39,7 +39,7 @@ class TestSessionFixture:
 
 class TestSuiteFixture:
     def test_fixture_with_from_raises_error(self) -> None:
-        ProTestSuite("test")
+        ApteSuite("test")
 
         with pytest.raises(ParameterizedFixtureError) as exc_info:
 
@@ -50,7 +50,7 @@ class TestSuiteFixture:
         assert "bad_fixture" in str(exc_info.value)
 
     def test_factory_with_from_raises_error(self) -> None:
-        ProTestSuite("test")
+        ApteSuite("test")
 
         with pytest.raises(ParameterizedFixtureError) as exc_info:
 
@@ -83,7 +83,7 @@ class TestStandaloneDecorators:
 
 class TestMultipleFromParams:
     def test_error_lists_all_params(self) -> None:
-        ProTestSession()
+        ApteSession()
         methods = ForEach(["GET", "POST"])
 
         with pytest.raises(ParameterizedFixtureError) as exc_info:
@@ -102,7 +102,7 @@ class TestMultipleFromParams:
 
 class TestValidFixtures:
     def test_fixture_without_from_works(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def good_fixture() -> str:
@@ -113,7 +113,7 @@ class TestValidFixtures:
         assert len(session.fixtures) == 1
 
     def test_factory_without_from_works(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @factory()
         def good_factory(name: str) -> dict[str, str]:

@@ -1,6 +1,6 @@
 """Example: Built-in fixtures (tmp_path, caplog, mocker, warns).
 
-ProTest provides ready-to-use fixtures for common testing needs.
+Apte provides ready-to-use fixtures for common testing needs.
 No setup required - just import and use with Annotated[Type, Use(fixture)].
 """
 
@@ -9,20 +9,20 @@ import warnings
 from pathlib import Path
 from typing import Annotated
 
-from protest import (
+from apte import (
+    ApteSession,
+    ApteSuite,
     Mocker,
-    ProTestSession,
-    ProTestSuite,
     Use,
     caplog,
     mocker,
     tmp_path,
     warns,
 )
-from protest.entities import LogCapture
+from apte.entities import LogCapture
 
-session = ProTestSession()
-suite = ProTestSuite("Builtins")
+session = ApteSession()
+suite = ApteSuite("Builtins")
 session.add_suite(suite)
 
 

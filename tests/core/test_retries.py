@@ -11,25 +11,25 @@ from typing import TYPE_CHECKING, Annotated
 
 import pytest
 
-from protest import ProTestSession, ProTestSuite, Retry
-from protest.core.runner import TestRunner
-from protest.di.decorators import fixture
-from protest.di.markers import Use
-from protest.entities import SuitePath
-from protest.events.types import Event
+from apte import ApteSession, ApteSuite, Retry
+from apte.core.runner import TestRunner
+from apte.di.decorators import fixture
+from apte.di.markers import Use
+from apte.entities import SuitePath
+from apte.events.types import Event
 
 if TYPE_CHECKING:
-    from protest.entities import TestResult, TestRetryInfo
+    from apte.entities import TestResult, TestRetryInfo
 
 
 class TestRetriesBasic:
     """Basic retry functionality tests."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_retry_succeeds_after_failure(self, session: ProTestSession) -> None:
+    def test_retry_succeeds_after_failure(self, session: ApteSession) -> None:
         """Test passes after initial failure with retry."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -56,7 +56,7 @@ class TestRetriesBasic:
         assert isinstance(results[0].previous_errors[0], ValueError)
         assert len(retry_events) == 1
 
-    def test_retry_exhausted_fails(self, session: ProTestSession) -> None:
+    def test_retry_exhausted_fails(self, session: ApteSession) -> None:
         """Test fails after exhausting all retries."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -82,7 +82,7 @@ class TestRetriesBasic:
         assert len(results[0].previous_errors) == 2
         assert len(retry_events) == 2
 
-    def test_no_retry_on_first_success(self, session: ProTestSession) -> None:
+    def test_no_retry_on_first_success(self, session: ApteSession) -> None:
         """Test that passes on first try doesn't trigger retry."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -103,7 +103,7 @@ class TestRetriesBasic:
         assert len(results[0].previous_errors) == 0
         assert len(retry_events) == 0
 
-    def test_retries_zero_no_retry(self, session: ProTestSession) -> None:
+    def test_retries_zero_no_retry(self, session: ApteSession) -> None:
         """Test with retry=0 fails immediately without retry."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -128,10 +128,10 @@ class TestRetryOn:
     """Tests for retry_on exception filtering."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_retry_on_matching_exception(self, session: ProTestSession) -> None:
+    def test_retry_on_matching_exception(self, session: ApteSession) -> None:
         """Retry triggers when exception matches retry_on."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -152,7 +152,7 @@ class TestRetryOn:
         assert call_count == 2
         assert results[0].attempt == 2
 
-    def test_no_retry_on_non_matching_exception(self, session: ProTestSession) -> None:
+    def test_no_retry_on_non_matching_exception(self, session: ApteSession) -> None:
         """No retry when exception doesn't match retry_on."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -175,7 +175,7 @@ class TestRetryOn:
         assert len(retry_events) == 0
         assert results[0].attempt == 1
 
-    def test_retry_on_tuple_of_exceptions(self, session: ProTestSession) -> None:
+    def test_retry_on_tuple_of_exceptions(self, session: ApteSession) -> None:
         """Retry triggers for any exception in tuple."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -198,7 +198,7 @@ class TestRetryOn:
         assert call_count == 3
         assert results[0].attempt == 3
 
-    def test_retry_on_subclass(self, session: ProTestSession) -> None:
+    def test_retry_on_subclass(self, session: ApteSession) -> None:
         """Retry triggers for subclass of retry_on exception."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -218,7 +218,7 @@ class TestRetryOn:
         assert result.success
         assert call_count == 2
 
-    def test_retry_on_none_retries_all(self, session: ProTestSession) -> None:
+    def test_retry_on_none_retries_all(self, session: ApteSession) -> None:
         """retry_on=None (default) retries on any exception."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -243,10 +243,10 @@ class TestRetryDelay:
     """Tests for retry_delay timing."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_retry_delay_applied(self, session: ProTestSession) -> None:
+    def test_retry_delay_applied(self, session: ApteSession) -> None:
         """Delay is applied between retries."""
         timestamps: list[float] = []
 
@@ -266,7 +266,7 @@ class TestRetryDelay:
         assert delay_between_1_and_2 >= expected_min_delay
         assert delay_between_2_and_3 >= expected_min_delay
 
-    def test_no_delay_when_zero(self, session: ProTestSession) -> None:
+    def test_no_delay_when_zero(self, session: ApteSession) -> None:
         """No delay when retry_delay=0."""
         timestamps: list[float] = []
 
@@ -284,7 +284,7 @@ class TestRetryDelay:
         max_expected_delay = 0.05
         assert delay < max_expected_delay
 
-    def test_retry_info_contains_delay(self, session: ProTestSession) -> None:
+    def test_retry_info_contains_delay(self, session: ApteSession) -> None:
         """TestRetryInfo contains configured delay."""
         retry_events: list[TestRetryInfo] = []
         session.events.on(Event.TEST_RETRY, lambda info: retry_events.append(info))
@@ -306,10 +306,10 @@ class TestRetriesWithSkip:
     """Retry interaction with skip."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_skip_ignores_retries(self, session: ProTestSession) -> None:
+    def test_skip_ignores_retries(self, session: ApteSession) -> None:
         """Skipped test does not run, retries never apply."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -338,12 +338,10 @@ class TestRetriesWithXfail:
     """Retry interaction with xfail."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_xfail_with_retries_exhausted_is_xfail(
-        self, session: ProTestSession
-    ) -> None:
+    def test_xfail_with_retries_exhausted_is_xfail(self, session: ApteSession) -> None:
         """xfail + retries exhausted → XFAIL."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_XFAIL, lambda result: results.append(result))
@@ -360,7 +358,7 @@ class TestRetriesWithXfail:
         assert results[0].xfail_reason == "Known flaky"
         assert results[0].attempt == 3
 
-    def test_xfail_with_retry_success_is_xpass(self, session: ProTestSession) -> None:
+    def test_xfail_with_retry_success_is_xpass(self, session: ApteSession) -> None:
         """xfail + passes after retry → XPASS."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_XPASS, lambda result: results.append(result))
@@ -387,10 +385,10 @@ class TestRetriesWithTimeout:
     """Retry interaction with timeout."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_timeout_triggers_retry(self, session: ProTestSession) -> None:
+    def test_timeout_triggers_retry(self, session: ApteSession) -> None:
         """Timeout on first attempt triggers retry."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -411,7 +409,7 @@ class TestRetriesWithTimeout:
         assert call_count == 2
         assert results[0].attempt == 2
 
-    def test_timeout_exhausts_retries(self, session: ProTestSession) -> None:
+    def test_timeout_exhausts_retries(self, session: ApteSession) -> None:
         """Timeout on all attempts exhausts retries."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -431,7 +429,7 @@ class TestRetriesWithTimeout:
         assert results[0].attempt == 2
         assert len(retry_events) == 1
 
-    def test_timeout_with_retry_on_filters(self, session: ProTestSession) -> None:
+    def test_timeout_with_retry_on_filters(self, session: ApteSession) -> None:
         """retry_on can filter TimeoutError."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -449,7 +447,7 @@ class TestRetriesWithTimeout:
         assert results[0].attempt == 1
         assert len(retry_events) == 0
 
-    def test_timeout_retry_integration(self, session: ProTestSession) -> None:
+    def test_timeout_retry_integration(self, session: ApteSession) -> None:
         """Integration test: timeout triggers retry, tracks events and previous errors."""
         pass_results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -501,10 +499,10 @@ class TestRetriesWithFixtureErrors:
     """Fixture errors should not trigger retries."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_fixture_error_no_retry(self, session: ProTestSession) -> None:
+    def test_fixture_error_no_retry(self, session: ApteSession) -> None:
         """Fixture error does not trigger retry."""
         results: list[TestResult] = []
         retry_events: list[TestRetryInfo] = []
@@ -548,7 +546,7 @@ class TestRetriesValidation:
 
     def test_zero_retries_allowed(self) -> None:
         """Zero retries is valid (default behavior)."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(retry=0)
         def test_zero() -> None:
@@ -559,7 +557,7 @@ class TestRetriesValidation:
 
     def test_zero_retry_delay_allowed(self) -> None:
         """Zero retry_delay is valid (no delay)."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(retry=Retry(times=1, delay=0.0))
         def test_zero_delay() -> None:
@@ -588,15 +586,15 @@ class TestRetriesWithSuite:
     """Retry with suite decorator."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_suite_test_retries(self, session: ProTestSession) -> None:
+    def test_suite_test_retries(self, session: ApteSession) -> None:
         """Suite test can have retries."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
 
-        suite = ProTestSuite("API")
+        suite = ApteSuite("API")
         session.add_suite(suite)
 
         call_count = 0
@@ -625,10 +623,10 @@ class TestRetryEvent:
     """TEST_RETRY event tests."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_retry_event_emitted(self, session: ProTestSession) -> None:
+    def test_retry_event_emitted(self, session: ApteSession) -> None:
         """TEST_RETRY event is emitted on each retry."""
         retry_events: list[TestRetryInfo] = []
         session.events.on(Event.TEST_RETRY, lambda info: retry_events.append(info))
@@ -646,12 +644,12 @@ class TestRetryEvent:
             assert event.max_attempts == 4
             assert isinstance(event.error, ValueError)
 
-    def test_retry_event_contains_correct_info(self, session: ProTestSession) -> None:
+    def test_retry_event_contains_correct_info(self, session: ApteSession) -> None:
         """TestRetryInfo contains all expected fields."""
         retry_events: list[TestRetryInfo] = []
         session.events.on(Event.TEST_RETRY, lambda info: retry_events.append(info))
 
-        suite = ProTestSuite("MySuite")
+        suite = ApteSuite("MySuite")
         session.add_suite(suite)
 
         @suite.test(retry=Retry(times=1, delay=0.25))
@@ -671,7 +669,7 @@ class TestRetryEvent:
         assert isinstance(info.error, RuntimeError)
         assert info.delay == 0.25
 
-    def test_no_retry_event_on_success(self, session: ProTestSession) -> None:
+    def test_no_retry_event_on_success(self, session: ApteSession) -> None:
         """No TEST_RETRY event when test passes first time."""
         retry_events: list[TestRetryInfo] = []
         session.events.on(Event.TEST_RETRY, lambda info: retry_events.append(info))
@@ -690,10 +688,10 @@ class TestRetriesAsync:
     """Retry with async tests."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_async_retry_succeeds(self, session: ProTestSession) -> None:
+    def test_async_retry_succeeds(self, session: ApteSession) -> None:
         """Async test retries work correctly."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
