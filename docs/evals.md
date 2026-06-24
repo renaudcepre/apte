@@ -194,10 +194,13 @@ Unannotated fields are ignored by the runner - free metadata.
 
 The return annotation is **required** and must be `bool` or a dataclass -
 `@evaluator` raises `TypeError` at decoration time otherwise (missing
-annotation, `-> float`, `-> X | None`, …). The annotation is the score
-contract: it determines the score names recorded in history and the keys
-of skipped placeholders, so it must also resolve at runtime - import the
-return type for real (not only under `TYPE_CHECKING`) and define it at
+annotation, `-> float`, `-> X | None`, …). A dataclass return must carry
+at least one `Metric`/`Verdict`/`Reason` field: one with only unannotated
+fields emits no scores, and a case whose evaluators all emit none passes
+vacuously, so it is rejected at decoration time too. The annotation is the
+score contract: it determines the score names recorded in history and the
+keys of skipped placeholders, so it must also resolve at runtime - import
+the return type for real (not only under `TYPE_CHECKING`) and define it at
 module level.
 
 ### Tracking-Only Evaluators

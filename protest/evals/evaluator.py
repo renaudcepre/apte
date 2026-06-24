@@ -255,6 +255,12 @@ def _validate_return_annotation(fn: Callable[..., Any]) -> None:
     `-> X | None` / `-> Any` - would make the static derivation diverge
     from what the run actually emits, silently reintroducing unstable
     score keys. Failing at decoration time keeps the contract checkable.
+
+    A dataclass return must also carry at least one Metric/Verdict/Reason
+    field. Without one it emits zero scores, and a case whose evaluators all
+    emit zero scores passes vacuously (`all([])` is True) - the same
+    silent pass the NoEvaluatorsError guard exists to prevent, slipping
+    through because that guard counts evaluators, not scores.
     """
     try:
         hints = get_type_hints(fn)
@@ -269,7 +275,18 @@ def _validate_return_annotation(fn: Callable[..., Any]) -> None:
         ) from exc
     ret = hints.get("return")
     base = get_origin(ret) or ret
-    if ret is bool or (isinstance(base, type) and dataclasses.is_dataclass(base)):
+    if ret is bool:
+        return
+    if isinstance(base, type) and dataclasses.is_dataclass(base):
+        if not _annotated_score_field_names(base):
+            raise TypeError(
+                f"@evaluator '{fn.__name__}' returns dataclass "
+                f"'{base.__name__}' with no Metric/Verdict/Reason-annotated "
+                f"fields, so it emits zero scores. A case whose evaluators all "
+                f"emit zero scores passes vacuously (all([]) is True), hiding "
+                f"the result the same way zero evaluators would. Annotate at "
+                f"least one field with Metric, Verdict, or Reason."
+            )
         return
     raise TypeError(
         f"@evaluator '{fn.__name__}' must declare a return annotation of bool "
