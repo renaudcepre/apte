@@ -1,5 +1,22 @@
 # JOURNAL
 
+## 2026-06-24 — fix(assets): wordmark SVG protest -> apte
+
+Le rename texte n'avait pas touche les logos : le mot "protest" y est vectorise
+en 7 paths (un par lettre, JetBrains Mono SemiBold 16px), pas en `<text>`. Donc
+invisible au sed, c'est un dessin du mot.
+
+"apte" = 4 lettres dont un "a" absent de "protest", impossible de reutiliser les
+paths existants. Regenere les glyphes via fonttools + JetBrains Mono SemiBold.
+Piege : verifier en comparant le premier point (moveto) est faux, l'ordre des
+contours differe entre generateurs. Bon invariant = la bounding box. Calibre le
+transform (scale 0.016, baseline y=38) sur le "p" du fichier, verifie les bbox
+des autres lettres, puis genere "apte". Rendu controle au rasteriseur (qlmanage).
+
+Touche `assets/logo-with-text-animate.svg` (hero README, viewBox resserree) et
+`docs/assets/logo.svg` (meme artwork, non reference). uv.lock se fait re-resoudre
+par chaque `uv run` sans `--no-project`, jete a chaque fois.
+
 ## 2026-06-24 — chore(rename): protest devient apte
 
 Nom `protest` pris sur PyPI (projet dormant, demande PEP 541 en attente). Nom
