@@ -1,6 +1,6 @@
 # Reporters
 
-ProTest adapts its output automatically based on your environment.
+Apte adapts its output automatically based on your environment.
 
 ## Display Modes
 
@@ -12,7 +12,7 @@ ProTest adapts its output automatically based on your environment.
 
 ## Automatic Detection
 
-ProTest automatically selects the best reporter:
+Apte automatically selects the best reporter:
 
 1. `NO_COLOR=1` → ASCII (respects the standard)
 2. `TERM=dumb` → ASCII
@@ -25,7 +25,7 @@ ProTest automatically selects the best reporter:
 
 ```bash
 # Disable colors (forces ASCII mode)
-protest run demo:session --no-color
+apte run demo:session --no-color
 ```
 
 ## Environment Variables
@@ -49,10 +49,10 @@ When running in Live mode, you get:
 ## Programmatic Usage
 
 ```python
-from protest.api import run_session
-from protest import ProTestSession
+from apte.api import run_session
+from apte import ApteSession
 
-session = ProTestSession()
+session = ApteSession()
 
 # Force ASCII mode (no colors)
 run_session(
@@ -66,8 +66,8 @@ run_session(
 You can create custom reporters by implementing the `PluginBase` interface:
 
 ```python
-from protest.plugin import PluginBase
-from protest.entities import TestResult, SessionResult
+from apte.plugin import PluginBase
+from apte.entities import TestResult, SessionResult
 
 class MyReporter(PluginBase):
     def on_test_pass(self, result: TestResult) -> None:
@@ -80,22 +80,22 @@ class MyReporter(PluginBase):
         print(f"Done: {result.passed} passed, {result.failed} failed")
 
 # Use your custom reporter
-session = ProTestSession(default_reporter=False)
+session = ApteSession(default_reporter=False)
 session.use(MyReporter())
 ```
 
 ## CTRF Reporter (CI/CD Integration)
 
-ProTest includes a built-in [CTRF](https://ctrf.io) (Common Test Report Format) reporter for CI/CD integration. CTRF is a standardized JSON format supported by GitHub Actions, Slack, Jenkins, and other tools.
+Apte includes a built-in [CTRF](https://ctrf.io) (Common Test Report Format) reporter for CI/CD integration. CTRF is a standardized JSON format supported by GitHub Actions, Slack, Jenkins, and other tools.
 
 ### Usage
 
 ```bash
 # Generate CTRF report
-protest run tests:session --ctrf-output ctrf-report.json
+apte run tests:session --ctrf-output ctrf-report.json
 
 # Combine with parallel execution
-protest run tests:session -n 4 --ctrf-output ctrf-report.json
+apte run tests:session -n 4 --ctrf-output ctrf-report.json
 ```
 
 ### Output Format
@@ -113,7 +113,7 @@ The report includes:
   "reportFormat": "CTRF",
   "specVersion": "0.0.0",
   "results": {
-    "tool": { "name": "ProTest", "version": "0.1.0" },
+    "tool": { "name": "Apte", "version": "0.1.0" },
     "summary": {
       "tests": 10,
       "passed": 8,
@@ -150,7 +150,7 @@ The report includes:
 
 ### Status Mapping
 
-| ProTest Status | CTRF Status | rawStatus |
+| Apte Status | CTRF Status | rawStatus |
 |---------------|-------------|-----------|
 | passed | `passed` | - |
 | failed | `failed` | - |
@@ -164,8 +164,8 @@ The report includes:
 
 ```python
 from pathlib import Path
-from protest.reporting.ctrf import CTRFReporter
+from apte.reporting.ctrf import CTRFReporter
 
-session = ProTestSession()
+session = ApteSession()
 session.use(CTRFReporter(output_path=Path("ctrf-report.json")))
 ```

@@ -5,8 +5,8 @@ import warnings
 
 import pytest
 
-from protest import ProTestSession, warns
-from protest.core.runner import TestRunner
+from apte import ApteSession, warns
+from apte.core.runner import TestRunner
 
 
 class TestWarnsContextManager:
@@ -119,12 +119,12 @@ class TestWarnsContextManager:
         assert isinstance(w.lineno, int)
 
 
-class TestWarnsWithProTestSession:
-    """Tests for warns() integration with ProTest runner."""
+class TestWarnsWithApteSession:
+    """Tests for warns() integration with Apte runner."""
 
     def test_warns_in_test_function(self) -> None:
-        """warns() works inside a ProTest test function."""
-        session = ProTestSession()
+        """warns() works inside a Apte test function."""
+        session = ApteSession()
 
         @session.test()
         def test_with_warns() -> None:
@@ -138,7 +138,7 @@ class TestWarnsWithProTestSession:
 
     def test_warns_failure_reported(self) -> None:
         """warns() failures are reported as test failures."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_warns_fails() -> None:
@@ -152,7 +152,7 @@ class TestWarnsWithProTestSession:
 
     def test_warns_with_match_in_test(self) -> None:
         """warns() with match pattern works in tests."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_warns_match() -> None:
@@ -166,7 +166,7 @@ class TestWarnsWithProTestSession:
 
     def test_warns_record_inspection_in_test(self) -> None:
         """warns() record can be inspected in tests."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_inspect_warnings() -> None:

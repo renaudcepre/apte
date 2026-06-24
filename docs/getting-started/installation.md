@@ -6,27 +6,27 @@
 
 ## Install
 
-ProTest is not yet on PyPI. Install directly from GitHub:
+Apte is not yet on PyPI. Install directly from GitHub:
 
 ```bash
 # With uv (recommended)
-uv add git+https://github.com/renaudcepre/protest.git
+uv add git+https://github.com/renaudcepre/apte.git
 
 # With pip
-pip install git+https://github.com/renaudcepre/protest.git
+pip install git+https://github.com/renaudcepre/apte.git
 ```
 
 ## Install from source (development)
 
 ```bash
-git clone https://github.com/renaudcepre/protest.git
-cd protest
+git clone https://github.com/renaudcepre/apte.git
+cd apte
 uv sync
 ```
 
 ## Optional: Rich Output
 
-ProTest automatically uses [Rich](https://rich.readthedocs.io/) for better terminal output if installed. If Rich is not available, it falls back to plain ASCII output.
+Apte automatically uses [Rich](https://rich.readthedocs.io/) for better terminal output if installed. If Rich is not available, it falls back to plain ASCII output.
 
 ```bash
 uv add rich
@@ -34,10 +34,10 @@ uv add rich
 
 ## IDE / type checker setup
 
-ProTest ships a `py.typed` marker, so Pyright, mypy and Pylance pick up
+Apte ships a `py.typed` marker, so Pyright, mypy and Pylance pick up
 its type hints once it is installed in the project's virtual env.
 
-If your editor reports `Import "protest" could not be resolved`, point
+If your editor reports `Import "apte" could not be resolved`, point
 your type checker at the right interpreter:
 
 - **VS Code / Pylance**: open the command palette → *Python: Select
@@ -55,5 +55,5 @@ your type checker at the right interpreter:
 - **mypy**: run via `uv run mypy ...` so it inherits the same
   interpreter, or set `python_executable` in `mypy.ini`.
 
-Once configured, no extra stub package or plugin is needed - protest
+Once configured, no extra stub package or plugin is needed - apte
 exposes its own types directly.

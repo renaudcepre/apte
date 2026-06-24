@@ -2,7 +2,7 @@
 
 import pytest
 
-from protest.entities import SuitePath
+from apte.entities import SuitePath
 
 
 class TestSuitePathCreation:

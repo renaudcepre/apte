@@ -1,6 +1,6 @@
 """Custom factory suite demonstrating @factory(managed=False).
 
-This suite shows how to use a custom factory class instead of ProTest's
+This suite shows how to use a custom factory class instead of Apte's
 built-in FixtureFactory. This is useful when you want:
 - Multiple creation methods (create_puppy, create_senior, create_pack)
 - Custom validation logic in factory methods
@@ -13,11 +13,11 @@ FixtureFactory and is called like: `await dog_factory(name="Rex", age=24)`
 
 from typing import Annotated
 
+from apte import ApteSuite, Use, factory
 from examples.yorkshire.app.domain import Job, Size
 from examples.yorkshire.app.factories import YorkshireFactory
 from examples.yorkshire.app.kennel import Kennel
 from examples.yorkshire.tests.fixtures import kennel
-from protest import ProTestSuite, Use, factory
 
 # =============================================================================
 # CUSTOM FACTORY FIXTURE (managed=False)
@@ -30,7 +30,7 @@ async def dog_factory(
 ) -> YorkshireFactory:
     """Factory fixture returning a custom YorkshireFactory class.
 
-    With managed=False, ProTest returns the factory class directly instead
+    With managed=False, Apte returns the factory class directly instead
     of wrapping it in FixtureFactory. This gives you full control over the
     factory's API.
 
@@ -46,7 +46,7 @@ async def dog_factory(
 # CUSTOM FACTORY SUITE
 # =============================================================================
 
-custom_factory_suite = ProTestSuite(
+custom_factory_suite = ApteSuite(
     "CustomFactory",
     tags=["factory", "managed-false"],
     description="Demonstrates @factory(managed=False) with custom factory class",

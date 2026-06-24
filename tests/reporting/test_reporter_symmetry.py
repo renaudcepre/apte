@@ -24,15 +24,15 @@ from typing import Any
 
 import pytest
 
-from protest.entities import (
+from apte.entities import (
     EvalPayload,
     EvalScoreEntry,
     SessionResult,
     TestResult,
 )
-from protest.plugin import PluginBase, PluginContext
-from protest.reporting.ascii import AsciiReporter
-from protest.reporting.rich_reporter import RichReporter
+from apte.plugin import PluginBase, PluginContext
+from apte.reporting.ascii import AsciiReporter
+from apte.reporting.rich_reporter import RichReporter
 
 # ---------------------------------------------------------------------------
 # Helpers

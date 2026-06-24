@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from protest.shell import CommandResult, Shell
+from apte.shell import CommandResult, Shell
 
 
 class TestCommandResult:

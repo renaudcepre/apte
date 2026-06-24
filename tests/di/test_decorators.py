@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-from protest import FixtureFactory, ProTestSession, Use, factory, fixture
-from protest.core.runner import TestRunner
-from protest.di.decorators import FixtureWrapper, get_fixture_marker
-from protest.plugin import PluginBase
+from apte import ApteSession, FixtureFactory, Use, factory, fixture
+from apte.core.runner import TestRunner
+from apte.di.decorators import FixtureWrapper, get_fixture_marker
+from apte.plugin import PluginBase
 from tests.conftest import CollectedEvents
 
 
@@ -17,7 +17,7 @@ class TestFixtureDecorator:
     ) -> None:
         """@fixture() creates a function-scoped fixture (fresh per test)."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0
@@ -48,7 +48,7 @@ class TestFixtureDecorator:
     ) -> None:
         """@fixture(tags=[...]) properly tags the fixture."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @fixture(tags=["database", "slow"])
@@ -73,7 +73,7 @@ class TestFixtureDecorator:
     ) -> None:
         """@fixture() with yield gets proper teardown."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         teardown_called = []
@@ -102,7 +102,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory() creates a function-scoped factory."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory()
@@ -126,7 +126,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory(cache=True) caches by kwargs."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0
@@ -160,7 +160,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory() without arguments defaults to cache=False."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0
@@ -192,7 +192,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory(cache=False) creates new instance each time."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         call_count = 0
@@ -224,7 +224,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory(managed=False) returns custom factory class with FixtureErrorWrapper."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         class UserFactory:
@@ -252,7 +252,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory() can depend on @fixture() (both function-scoped)."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @fixture()
@@ -284,7 +284,7 @@ class TestFactoryDecorator:
     ) -> None:
         """@factory(tags=[...]) properly tags the factory."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory(tags=["slow", "integration"])
@@ -354,7 +354,7 @@ class TestDecoratorWithoutParentheses:
     ) -> None:
         """End-to-end: a bare `@fixture` resolves like a normal fixture."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @fixture
@@ -373,7 +373,7 @@ class TestDecoratorWithoutParentheses:
     ) -> None:
         """End-to-end: a bare `@factory` produces a usable factory."""
         plugin, _collected = event_collector
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(plugin)
 
         @factory

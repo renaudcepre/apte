@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from protest.entities import TestItem
-from protest.tags.plugin import TagFilterPlugin
+from apte.entities import TestItem
+from apte.tags.plugin import TagFilterPlugin
 
 if TYPE_CHECKING:
     from collections.abc import Callable

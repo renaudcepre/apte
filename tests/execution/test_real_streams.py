@@ -11,7 +11,7 @@ from __future__ import annotations
 import io
 import sys
 
-from protest.execution.capture import (
+from apte.execution.capture import (
     TaskAwareStream,
     real_stderr,
     real_stdout,

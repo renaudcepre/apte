@@ -7,21 +7,21 @@ from typing import Annotated, Any
 
 import pytest
 
-from protest import ProTestSession, Use
-from protest.api import run_session
-from protest.di.container import FixtureContainer
-from protest.di.decorators import fixture
-from protest.di.factory import FixtureFactory
-from protest.di.hashable import make_hashable
-from protest.di.proxy import FixtureErrorWrapper
-from protest.entities import Fixture, FixtureScope
-from protest.events.bus import EventBus
-from protest.exceptions import (
+from apte import ApteSession, Use
+from apte.api import run_session
+from apte.di.container import FixtureContainer
+from apte.di.decorators import fixture
+from apte.di.factory import FixtureFactory
+from apte.di.hashable import make_hashable
+from apte.di.proxy import FixtureErrorWrapper
+from apte.entities import Fixture, FixtureScope
+from apte.events.bus import EventBus
+from apte.exceptions import (
     FixtureNotFoundError,
     ScopeMismatchError,
     UnregisteredDependencyError,
 )
-from protest.execution.async_bridge import is_async_callable
+from apte.execution.async_bridge import is_async_callable
 
 
 class TestHashableEdgeCases:
@@ -250,7 +250,7 @@ class TestApiForceNoColor:
     def test_run_session_with_force_no_color(self) -> None:
         """run_session with force_no_color=True uses ASCII reporter."""
 
-        session = ProTestSession()
+        session = ApteSession()
         executed: list[str] = []
 
         @session.test()

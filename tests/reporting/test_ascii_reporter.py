@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from protest.entities import (
+from apte.entities import (
     HandlerInfo,
     SessionResult,
     SessionSetupInfo,
@@ -14,8 +14,8 @@ from protest.entities import (
     TestStartInfo,
     TestTeardownInfo,
 )
-from protest.events.types import Event
-from protest.reporting.ascii import (
+from apte.events.types import Event
+from apte.reporting.ascii import (
     AsciiReporter,
     _extract_suite_from_node_id,
     _format_duration,

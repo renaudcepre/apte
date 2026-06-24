@@ -27,9 +27,9 @@ The Event Bus decouples test execution from reporting and plugins. Components co
 
 **Key files:**
 
-- `protest/events/bus.py` - EventBus implementation
-- `protest/events/types.py` - Event enum
-- `protest/plugin.py` - PluginBase class
+- `apte/events/bus.py` - EventBus implementation
+- `apte/events/types.py` - Event enum
+- `apte/plugin.py` - PluginBase class
 
 ## Two Emission Patterns
 

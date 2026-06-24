@@ -5,12 +5,12 @@ from typing import Annotated, Any
 
 import pytest
 
-from protest.core.fixture import is_generator_like
-from protest.di.container import FixtureContainer
-from protest.di.decorators import FixtureWrapper, fixture
-from protest.di.markers import Use
-from protest.entities import FixtureScope, SuitePath
-from protest.exceptions import (
+from apte.core.fixture import is_generator_like
+from apte.di.container import FixtureContainer
+from apte.di.decorators import FixtureWrapper, fixture
+from apte.di.markers import Use
+from apte.entities import FixtureScope, SuitePath
+from apte.exceptions import (
     AlreadyRegisteredError,
     CircularDependencyError,
     PlainFunctionError,

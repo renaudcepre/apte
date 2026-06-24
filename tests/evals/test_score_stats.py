@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from protest.evals.types import ScoreStats
+from apte.evals.types import ScoreStats
 
 
 class TestEmptyAndSingleValue:

@@ -5,11 +5,11 @@ import tempfile
 import tracemalloc
 from pathlib import Path
 
-from protest import ProTestSession as Session
-from protest import ProTestSuite as Suite
-from protest.api import run_session
-from protest.entities import TestRegistration
-from protest.reporting.ctrf import CTRFReporter
+from apte import ApteSession as Session
+from apte import ApteSuite as Suite
+from apte.api import run_session
+from apte.entities import TestRegistration
+from apte.reporting.ctrf import CTRFReporter
 
 
 def generate_suite(n: int, fail_rate: float, output_size: int) -> Suite:

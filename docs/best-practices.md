@@ -1,6 +1,6 @@
-# ProTest Best Practices
+# Apte Best Practices
 
-This guide covers recommended patterns for organizing and writing tests with ProTest.
+This guide covers recommended patterns for organizing and writing tests with Apte.
 
 ## Project Structure
 
@@ -40,14 +40,14 @@ tests/
 
 ```python
 # tests/session.py
-from protest import ProTestSession
+from apte import ApteSession
 
 from tests.unit.entities import entities_suite
 from tests.unit.services import services_suite
 from tests.integration.suite import integration_suite
 from tests.fixtures import database, cache  # Session fixtures
 
-session = ProTestSession(concurrency=4)
+session = ApteSession(concurrency=4)
 session.bind(database)
 session.bind(cache)
 session.add_suite(entities_suite)
@@ -59,7 +59,7 @@ session.add_suite(integration_suite)
 
 ```python
 # DON'T DO THIS - 500 lines of mixed fixtures/suites/tests
-session = ProTestSession()
+session = ApteSession()
 
 @fixture
 def db(): ...
@@ -70,7 +70,7 @@ def cache(): ...
 session.bind(db)
 session.bind(cache)
 
-suite1 = ProTestSuite("Suite1")
+suite1 = ApteSuite("Suite1")
 session.add_suite(suite1)
 
 @suite1.test()
@@ -83,8 +83,8 @@ def test_something(): ...
 
 ```python
 # DON'T DO THIS - importing modules just for their registration side effects
-session = ProTestSession()
-suite = ProTestSuite("Domain")
+session = ApteSession()
+suite = ApteSuite("Domain")
 session.add_suite(suite)
 
 import tests.test_users   # noqa: F401, E402
@@ -99,9 +99,9 @@ The imports are unused - they exist only to trigger `@suite.test()` registration
 
 ```python
 # tests/unit/notes.py
-from protest import ProTestSuite, factory
+from apte import ApteSuite, factory
 
-notes_suite = ProTestSuite("Notes", tags=["domain", "notes"])
+notes_suite = ApteSuite("Notes", tags=["domain", "notes"])
 
 # Factories for this domain
 @factory(cache=False)
@@ -126,9 +126,9 @@ Nest when there's a logical hierarchy:
 
 ```python
 # Good: Logical grouping
-api_suite = ProTestSuite("API")
-users_suite = ProTestSuite("Users")
-permissions_suite = ProTestSuite("Permissions")
+api_suite = ApteSuite("API")
+users_suite = ApteSuite("Users")
+permissions_suite = ApteSuite("Permissions")
 
 users_suite.add_suite(permissions_suite)  # API::Users::Permissions
 api_suite.add_suite(users_suite)
@@ -136,9 +136,9 @@ api_suite.add_suite(users_suite)
 
 ```python
 # Bad: Arbitrary nesting
-animals_suite = ProTestSuite("Animals")
-puppies_suite = ProTestSuite("Puppies")
-workers_suite = ProTestSuite("Workers")  # ?
+animals_suite = ApteSuite("Animals")
+puppies_suite = ApteSuite("Puppies")
+workers_suite = ApteSuite("Workers")  # ?
 
 animals_suite.add_suite(puppies_suite)
 puppies_suite.add_suite(workers_suite)  # Confusing
@@ -148,7 +148,7 @@ puppies_suite.add_suite(workers_suite)  # Confusing
 
 ```python
 # Tests that share global state need sequential execution
-di_suite = ProTestSuite(
+di_suite = ApteSuite(
     "DI",
     max_concurrency=1,
     tags=["di"]
@@ -170,7 +170,7 @@ di_suite = ProTestSuite(
 
 ```python
 # tests/fixtures.py
-from protest import fixture
+from apte import fixture
 
 @fixture(tags=["database"])
 async def database() -> AsyncGenerator[Database, None]:
@@ -185,9 +185,9 @@ async def database() -> AsyncGenerator[Database, None]:
 
 ```python
 # tests/unit/api.py
-from protest import ProTestSuite, fixture
+from apte import ApteSuite, fixture
 
-api_suite = ProTestSuite("API")
+api_suite = ApteSuite("API")
 
 @fixture
 async def authenticated_client(
@@ -214,7 +214,7 @@ def request_payload() -> dict:
 
 ### Managed Factories (Default)
 
-ProTest manages lifecycle - use `yield` for teardown:
+Apte manages lifecycle - use `yield` for teardown:
 
 ```python
 @factory(cache=False)
@@ -272,12 +272,12 @@ def test_api_returns_401_for_unauthenticated_request(): ...
 
 ```python
 # Use domain/feature names
-ProTestSuite("Users")           # Good
-ProTestSuite("API")             # Good
-ProTestSuite("Authentication")  # Good
+ApteSuite("Users")           # Good
+ApteSuite("API")             # Good
+ApteSuite("Authentication")  # Good
 
-ProTestSuite("TestGroup1")      # Bad
-ProTestSuite("Misc")            # Bad
+ApteSuite("TestGroup1")      # Bad
+ApteSuite("Misc")            # Bad
 ```
 
 ### Fixtures and Factories
@@ -300,7 +300,7 @@ def api_client(): ...    # Provides an API client
 
 ```python
 # Domain tags
-ProTestSuite("API", tags=["api"])
+ApteSuite("API", tags=["api"])
 @fixture(tags=["database"])
 
 # Behavior tags
@@ -315,13 +315,13 @@ ProTestSuite("API", tags=["api"])
 
 ```bash
 # Run only API tests
-protest run tests:session -t api
+apte run tests:session -t api
 
 # Exclude slow tests
-protest run tests:session --exclude-tag slow
+apte run tests:session --exclude-tag slow
 
 # Combine filters
-protest run tests:session -t api --exclude-tag flaky
+apte run tests:session -t api --exclude-tag flaky
 ```
 
 ## Common Anti-Patterns
@@ -374,17 +374,17 @@ async def test_flaky_external_service(): ...
 
 ```python
 # BAD
-main_suite = ProTestSuite("Main")
-sub1 = ProTestSuite("Group1")
-sub2 = ProTestSuite("Things")
+main_suite = ApteSuite("Main")
+sub1 = ApteSuite("Group1")
+sub2 = ApteSuite("Things")
 main_suite.add_suite(sub1)
 sub1.add_suite(sub2)
 ```
 
 ```python
 # GOOD: Domain-driven
-api_suite = ProTestSuite("API")
-users_suite = ProTestSuite("Users")
+api_suite = ApteSuite("API")
+users_suite = ApteSuite("Users")
 api_suite.add_suite(users_suite)  # Clear: API::Users
 ```
 
@@ -395,7 +395,7 @@ api_suite.add_suite(users_suite)  # Clear: API::Users
 Use the `Shell` helper:
 
 ```python
-from protest import Shell
+from apte import Shell
 
 @session.test()
 async def test_my_cli():
@@ -453,11 +453,11 @@ def request_id() -> str:
 from typing import Annotated
 from uuid import uuid4
 
-from protest import FixtureFactory, ProTestSuite, Use, raises, factory
+from apte import FixtureFactory, ApteSuite, Use, raises, factory
 
 from myapp.domain import Note, NoteStatus, InvalidTransitionError
 
-notes_suite = ProTestSuite("Notes", tags=["domain"])
+notes_suite = ApteSuite("Notes", tags=["domain"])
 
 
 # === Factories ===

@@ -5,7 +5,7 @@ Run the same test with multiple values using `ForEach` and `From`.
 ## Basic Usage
 
 ```python
-from protest import ForEach, From
+from apte import ForEach, From
 
 HTTP_CODES = ForEach([200, 201, 204])
 
@@ -68,10 +68,10 @@ def test_permissions(api_user):  # Where does the role come from? Magic.
     pass
 ```
 
-### The ProTest way (explicit)
+### The Apte way (explicit)
 
 ```python
-from protest import factory, ForEach, From, FixtureFactory, Use
+from apte import factory, ForEach, From, FixtureFactory, Use
 
 ROLES = ForEach([UserRole.creator, UserRole.admin])
 

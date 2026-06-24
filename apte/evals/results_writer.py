@@ -1,0 +1,175 @@
+"""EvalResultsWriter - writes per-case eval results as markdown files.
+
+Listens to TEST_PASS/FAIL events, filters for eval cases, and writes
+a markdown file for each case to .apte/results/<suite>_<timestamp>/.
+"""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from apte import console
+from apte.evals.types import EvalCaseResult, EvalScore, EvalSuiteReport
+from apte.plugin import PluginBase
+
+if TYPE_CHECKING:
+    from apte.entities.events import TestResult
+    from apte.plugin import PluginContext
+
+DEFAULT_RESULTS_DIR = Path(".apte") / "results"
+
+
+class EvalResultsWriter(PluginBase):
+    """Writes per-case eval result files as markdown."""
+
+    name = "eval-results-writer"
+    description = "Write eval case result files"
+
+    def __init__(self, history_dir: Path | None = None) -> None:
+        self._results_base = (
+            (history_dir / "results") if history_dir else DEFAULT_RESULTS_DIR
+        )
+        self._run_dirs: dict[str, Path] = {}
+        self._used_stems: dict[str, set[str]] = {}
+
+    @classmethod
+    def activate(cls, ctx: PluginContext) -> EvalResultsWriter:
+        return cls(history_dir=ctx.get("history_dir"))
+
+    def on_test_pass(self, result: TestResult) -> None:
+        self._maybe_write(result)
+
+    def on_test_fail(self, result: TestResult) -> None:
+        self._maybe_write(result)
+
+    def _maybe_write(self, result: TestResult) -> None:
+        if not result.is_eval or result.eval_payload is None:
+            return
+        suite_name = result.suite_path.root_name if result.suite_path else "evals"
+        case_result = EvalCaseResult.from_test_result(result)
+        self._write_case_file(case_result, suite_name)
+
+    def _write_case_file(self, case_result: EvalCaseResult, suite_name: str) -> None:
+        if suite_name not in self._run_dirs:
+            self._run_dirs[suite_name] = _make_run_dir(suite_name, self._results_base)
+            self._used_stems[suite_name] = set()
+        _write_case_file(
+            case_result, self._run_dirs[suite_name], self._used_stems[suite_name]
+        )
+
+    def on_eval_suite_end(self, report: Any) -> None:
+        """Print results dir path for the suite."""
+
+        if not isinstance(report, EvalSuiteReport):
+            return
+        run_dir = self._run_dirs.get(report.suite_name)
+        if run_dir:
+            console.print(f"  Results: {run_dir}", prefix=False)
+
+
+# ---------------------------------------------------------------------------
+# File writing helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_run_dir(suite_name: str, base_dir: Path | None = None) -> Path:
+    """Create and return a unique timestamped directory for this run.
+
+    The timestamp has one-second resolution, so two runs of the same suite
+    within the same second (or two processes racing) would otherwise land on
+    the same directory and merge their case files. Create with
+    ``exist_ok=False`` and bump a numeric suffix until mkdir wins - the call
+    is atomic, so this is also safe across concurrent processes.
+    """
+    base = base_dir or DEFAULT_RESULTS_DIR
+    base.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+    safe_suite = re.sub(r"[^\w\-]", "_", suite_name) or "evals"
+    candidate = base / f"{safe_suite}_{ts}"
+    suffix = 2
+    while True:
+        try:
+            candidate.mkdir(exist_ok=False)
+        except FileExistsError:
+            candidate = base / f"{safe_suite}_{ts}-{suffix}"
+            suffix += 1
+        else:
+            return candidate
+
+
+def _write_case_file(case: EvalCaseResult, run_dir: Path, used_stems: set[str]) -> None:
+    """Write a markdown file for a single eval case.
+
+    Distinct case names can sanitize to the same stem (``a/b`` and ``a:b``
+    both become ``a_b``), which would silently overwrite the first file.
+    Track the stems already used in this run dir and disambiguate collisions
+    with a numeric suffix so every case keeps its own file.
+    """
+    base = re.sub(r"[^\w\-]", "_", case.case_name) or "case"
+    stem = base
+    suffix = 2
+    while stem in used_stems:
+        stem = f"{base}-{suffix}"
+        suffix += 1
+    used_stems.add(stem)
+    path = run_dir / f"{stem}.md"
+    path.write_text(_render_case(case), encoding="utf-8")
+
+
+def _render_case(case: EvalCaseResult) -> str:
+    status = "PASS ✓" if case.passed else "FAIL ✗"
+    duration = _format_case_duration(case.duration)
+    lines: list[str] = [
+        f"# {case.case_name} - {status} ({duration})",
+        "",
+    ]
+
+    lines += ["## Input", "", _format_value(case.inputs), ""]
+    lines += ["## Output", "", _format_value(case.output), ""]
+    lines += ["## Expected", "", _format_value(case.expected_output), ""]
+
+    if case.scores:
+        lines += ["## Scores", ""]
+        for score in case.scores:
+            lines.append(_format_score(score))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+_ONE_MILLISECOND = 0.001
+_TEN_MILLISECONDS = 0.01
+_ONE_SECOND = 1.0
+
+
+def _format_case_duration(seconds: float) -> str:
+    """Format SUT duration with adaptive units.
+
+    Sub-ms tasks (deterministic stubs, fast classifiers) used to render as
+    `0ms` because the renderer rounded to the nearest millisecond.
+    """
+    if seconds < _ONE_MILLISECOND:
+        return f"{seconds * 1_000_000:.0f}µs"
+    if seconds < _TEN_MILLISECONDS:
+        return f"{seconds * 1000:.2f}ms"
+    if seconds < _ONE_SECOND:
+        return f"{seconds * 1000:.0f}ms"
+    return f"{seconds:.2f}s"
+
+
+def _format_score(score: EvalScore) -> str:
+    if score.skipped:
+        return f"- **{score.name}**: skipped"
+    icon = "·" if score.is_metric else ("✓" if score.passed else "✗")
+    return f"- **{score.name}**: {score.value} {icon}"
+
+
+def _format_value(value: Any) -> str:
+    if value is None:
+        return "_none_"
+    if isinstance(value, str):
+        return value if value.strip() else "_empty string_"
+    return f"```\n{value!r}\n```"

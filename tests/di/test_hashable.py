@@ -1,6 +1,6 @@
 import pytest
 
-from protest.di.hashable import UnhashableValueError, make_hashable
+from apte.di.hashable import UnhashableValueError, make_hashable
 
 
 class TestMakeHashablePrimitives:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from protest.reporting.ctrf import CTRFReporter
+from apte.reporting.ctrf import CTRFReporter
 
 if TYPE_CHECKING:
     from pathlib import Path

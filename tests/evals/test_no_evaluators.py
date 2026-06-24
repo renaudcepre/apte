@@ -13,16 +13,16 @@ from typing import Annotated
 
 import pytest
 
-from protest import ForEach, From, ProTestSession
-from protest.evals import (
+from apte import ApteSession, ForEach, From
+from apte.evals import (
     EvalCase,
     EvalContext,
     EvalSuite,
     ShortCircuit,
     evaluator,
 )
-from protest.evals.wrapper import make_eval_wrapper
-from protest.exceptions import NoEvaluatorsError
+from apte.evals.wrapper import make_eval_wrapper
+from apte.exceptions import NoEvaluatorsError
 
 
 @evaluator
@@ -53,8 +53,8 @@ class TestNoEvaluatorsRaises:
     def test_session_path_fails_with_no_evaluators_error(self) -> None:
         """Through the runner, the guard surfaces as a NoEvaluatorsError on
         the case, not a silently green session."""
-        from protest.api import run_session  # noqa: PLC0415 - heavy import
-        from protest.plugin import PluginBase  # noqa: PLC0415 - heavy import
+        from apte.api import run_session  # noqa: PLC0415 - heavy import
+        from apte.plugin import PluginBase  # noqa: PLC0415 - heavy import
 
         captured = []
 
@@ -65,7 +65,7 @@ class TestNoEvaluatorsRaises:
                 captured.append(result)
 
         cases = ForEach([EvalCase(inputs="x", name="c1")])
-        session = ProTestSession()
+        session = ApteSession()
         session.register_plugin(Capture())
         suite = EvalSuite("evals")
 

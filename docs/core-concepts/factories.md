@@ -7,7 +7,7 @@ Factories create configurable fixture instances with automatic caching and teard
 A factory is a fixture that accepts arguments and can be called multiple times:
 
 ```python
-from protest import factory, FixtureFactory, Use
+from apte import factory, FixtureFactory, Use
 from typing import Annotated
 
 @factory()
@@ -162,7 +162,7 @@ This distinguishes infrastructure problems from test bugs.
 
 ### Managed (Default)
 
-ProTest manages the lifecycle - use `yield` for teardown:
+Apte manages the lifecycle - use `yield` for teardown:
 
 ```python
 @factory()  # managed=True by default
@@ -173,7 +173,7 @@ def user(name: str):
 
 session.bind(user)
 
-# Usage - async, ProTest manages lifecycle
+# Usage - async, Apte manages lifecycle
 alice = await user_factory(name="alice")
 ```
 

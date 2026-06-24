@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from protest import ForEach, From, ProTestSession
-from protest.core.collector import Collector
-from protest.evals import EvalCase
-from protest.evals.suite import EvalSuite
-from protest.tags.plugin import TagFilterPlugin
+from apte import ApteSession, ForEach, From
+from apte.core.collector import Collector
+from apte.evals import EvalCase
+from apte.evals.suite import EvalSuite
+from apte.tags.plugin import TagFilterPlugin
 
 # Module-level case sources so `get_type_hints()` can resolve Annotated args.
 _single_tagged = [EvalCase(inputs="x", name="c1", tags=["safety"])]
@@ -37,7 +37,7 @@ _filter_cases = [
 
 def _collect(cases: list[EvalCase]) -> list:
     """Build a session with a parametrized eval over `cases` and collect items."""
-    session = ProTestSession()
+    session = ApteSession()
     suite = EvalSuite("evals")
 
     source = ForEach(cases)

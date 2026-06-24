@@ -3,6 +3,7 @@
 from collections.abc import Generator
 from typing import Annotated
 
+from apte import Use, factory, fixture
 from examples.yorkshire.app.domain import Job, Size, Yorkshire
 from examples.yorkshire.app.kennel import Kennel
 from examples.yorkshire.app.workers import (
@@ -11,7 +12,6 @@ from examples.yorkshire.app.workers import (
     WorkSchedule,
 )
 from examples.yorkshire.tests.fixtures import kennel
-from protest import Use, factory, fixture
 
 # =============================================================================
 # WORKERS FIXTURES

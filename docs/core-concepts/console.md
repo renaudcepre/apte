@@ -4,12 +4,12 @@ Print progress and debug messages that bypass test capture.
 
 ## The Problem
 
-`print()` inside tests and fixtures is captured by ProTest. During long-running fixtures (pipeline imports, graph seeding), there's no visible feedback.
+`print()` inside tests and fixtures is captured by Apte. During long-running fixtures (pipeline imports, graph seeding), there's no visible feedback.
 
 ## `console.print`
 
 ```python
-from protest import console
+from apte import console
 
 @fixture()
 async def pipeline():

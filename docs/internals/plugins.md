@@ -32,8 +32,8 @@ bus invokes them when relevant events occur.
 All plugins extend `PluginBase`:
 
 ```python
-from protest.plugin import PluginBase
-from protest.entities import TestResult, SessionResult
+from apte.plugin import PluginBase
+from apte.entities import TestResult, SessionResult
 
 
 class MyPlugin(PluginBase):
@@ -107,7 +107,7 @@ class method decides whether to instantiate the plugin based on CLI arguments.
 ```python
 from typing import Self
 
-from protest.plugin import PluginBase, PluginContext
+from apte.plugin import PluginBase, PluginContext
 
 
 class CTRFPlugin(PluginBase):
@@ -176,7 +176,7 @@ can filter; they chain in registration order.
 `setup()` is called when the plugin is registered, before any events fire:
 
 ```python
-def setup(self, session: ProTestSession) -> None:
+def setup(self, session: ApteSession) -> None:
     # Access session configuration
     self.concurrency = session.concurrency
 
@@ -189,7 +189,7 @@ def setup(self, session: ProTestSession) -> None:
 ### Programmatic
 
 ```python
-session = ProTestSession()
+session = ApteSession()
 session.register_plugin(MyPlugin(output="report.json"))
 ```
 
@@ -221,8 +221,8 @@ Plugins can share data via `session.cache`, a `CacheStorage` instance. This enab
 ### Accessing the Cache
 
 ```python
-from protest.plugin import PluginBase
-from protest.entities import TestResult
+from apte.plugin import PluginBase
+from apte.entities import TestResult
 
 
 class MyPlugin(PluginBase):
@@ -246,7 +246,7 @@ class MyPlugin(PluginBase):
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `load()` | `None` | Load cache from `.protest/cache.json` |
+| `load()` | `None` | Load cache from `.apte/cache.json` |
 | `save()` | `None` | Persist cache to disk |
 | `clear()` | `None` | Delete cache file |
 | `get_result(node_id)` | `TestCacheEntry \| None` | Get cached result for a test |

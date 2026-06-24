@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from protest.cache.plugin import CachePlugin
-from protest.cache.storage import CacheStorage
-from protest.core.session import ProTestSession
-from protest.entities import SessionResult, TestResult
+from apte.cache.plugin import CachePlugin
+from apte.cache.storage import CacheStorage
+from apte.core.session import ApteSession
+from apte.entities import SessionResult, TestResult
 from tests.factories.test_items import make_test_item_from_node_id as make_test_item
 
 if TYPE_CHECKING:
@@ -16,17 +16,17 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def temp_session(tmp_path: Path) -> ProTestSession:
+def temp_session(tmp_path: Path) -> ApteSession:
     """Create a session with a temporary cache directory."""
-    session = ProTestSession()
+    session = ApteSession()
     session._cache_storage = CacheStorage(
-        cache_dir=tmp_path / ".protest", cache_file="cache.json"
+        cache_dir=tmp_path / ".apte", cache_file="cache.json"
     )
     return session
 
 
 @pytest.fixture
-def cache_file(temp_session: ProTestSession) -> Path:
+def cache_file(temp_session: ApteSession) -> Path:
     """Return the cache file path."""
     return temp_session.cache.cache_file
 
@@ -40,7 +40,7 @@ def write_cache(cache_file: Path, data: dict[str, Any]) -> None:
 class TestCachePluginRecording:
     """Tests for recording test results via session.cache."""
 
-    def test_on_test_pass_records_passed(self, temp_session: ProTestSession) -> None:
+    def test_on_test_pass_records_passed(self, temp_session: ApteSession) -> None:
         """on_test_pass records status=passed via session.cache."""
         plugin = CachePlugin()
         plugin.setup(temp_session)
@@ -53,7 +53,7 @@ class TestCachePluginRecording:
         assert entry.status == "passed"
         assert entry.duration == 1.5
 
-    def test_on_test_fail_records_failed(self, temp_session: ProTestSession) -> None:
+    def test_on_test_fail_records_failed(self, temp_session: ApteSession) -> None:
         """on_test_fail records status=failed for test failures."""
         plugin = CachePlugin()
         plugin.setup(temp_session)
@@ -73,7 +73,7 @@ class TestCachePluginRecording:
         assert entry.duration == 0.5
 
     def test_on_test_fail_records_error_for_fixture_failure(
-        self, temp_session: ProTestSession
+        self, temp_session: ApteSession
     ) -> None:
         """on_test_fail records status=error for fixture errors."""
 
@@ -94,7 +94,7 @@ class TestCachePluginRecording:
         assert entry.status == "error"
         assert entry.duration == 0.1
 
-    def test_multiple_results_recorded(self, temp_session: ProTestSession) -> None:
+    def test_multiple_results_recorded(self, temp_session: ApteSession) -> None:
         """Multiple test results are all recorded."""
 
         plugin = CachePlugin()
@@ -116,7 +116,7 @@ class TestCachePluginSaveLoad:
     """Tests for cache file save/load operations."""
 
     def test_save_cache_creates_file(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """on_session_end saves results to cache file."""
 
@@ -133,7 +133,7 @@ class TestCachePluginSaveLoad:
         assert data["version"] == 1
 
     def test_load_cache_reads_existing(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """setup loads existing cache data."""
 
@@ -153,9 +153,7 @@ class TestCachePluginSaveLoad:
         assert entry is not None
         assert entry.status == "failed"
 
-    def test_load_cache_handles_missing_file(
-        self, temp_session: ProTestSession
-    ) -> None:
+    def test_load_cache_handles_missing_file(self, temp_session: ApteSession) -> None:
         """setup handles missing cache file gracefully."""
 
         plugin = CachePlugin()
@@ -165,7 +163,7 @@ class TestCachePluginSaveLoad:
         assert temp_session.cache.get_results() == {}
 
     def test_load_cache_handles_corrupted_json(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """setup handles corrupted JSON gracefully."""
 
@@ -182,7 +180,7 @@ class TestCachePluginClear:
     """Tests for --cache-clear functionality."""
 
     def test_cache_clear_removes_file(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """cache_clear=True removes existing cache file."""
 
@@ -193,9 +191,7 @@ class TestCachePluginClear:
 
         assert not cache_file.exists()
 
-    def test_cache_clear_handles_missing_file(
-        self, temp_session: ProTestSession
-    ) -> None:
+    def test_cache_clear_handles_missing_file(self, temp_session: ApteSession) -> None:
         """cache_clear=True handles missing file gracefully."""
 
         plugin = CachePlugin(cache_clear=True)
@@ -209,7 +205,7 @@ class TestCachePluginFiltering:
     """Tests for --lf (last-failed) filtering."""
 
     def test_filter_returns_only_failed_tests(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """on_collection_finish returns only previously failed tests."""
 
@@ -242,7 +238,7 @@ class TestCachePluginFiltering:
         assert filtered_ids == {"mod::failing", "mod::erroring"}
 
     def test_filter_returns_all_if_no_failures_in_cache(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """If cache has no failures, return all tests as fallback."""
 
@@ -266,7 +262,7 @@ class TestCachePluginFiltering:
         assert len(filtered) == expected_filtered_count
 
     def test_filter_returns_empty_if_failures_exist_but_no_match(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """If cache has failures but no items match, return empty list (no fallback)."""
         write_cache(
@@ -287,9 +283,7 @@ class TestCachePluginFiltering:
 
         assert filtered == []
 
-    def test_filter_returns_all_if_cache_empty(
-        self, temp_session: ProTestSession
-    ) -> None:
+    def test_filter_returns_all_if_cache_empty(self, temp_session: ApteSession) -> None:
         """If no cache, return all tests."""
 
         plugin = CachePlugin(last_failed=True)
@@ -303,7 +297,7 @@ class TestCachePluginFiltering:
         assert len(filtered) == expected_filtered_count
 
     def test_no_filter_when_last_failed_false(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """Without --lf, on_collection_finish returns all tests."""
 
@@ -341,7 +335,7 @@ class TestCachePluginIntegration:
     """Integration tests simulating multiple runs."""
 
     def test_second_run_with_lf_filters_correctly(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """Simulate: first run with failures, second run with --lf."""
 
@@ -367,7 +361,7 @@ class TestCachePluginIntegration:
         assert filtered[0].node_id == "mod::b"
 
     def test_cache_clear_then_lf_runs_all(
-        self, temp_session: ProTestSession, cache_file: Path
+        self, temp_session: ApteSession, cache_file: Path
     ) -> None:
         """--cache-clear followed by --lf should run all tests."""
 

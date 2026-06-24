@@ -2,18 +2,18 @@
 
 from typing import Annotated
 
-from protest import ForEach, From, ProTestSession, ProTestSuite, Skip, Use, fixture
-from protest.core.collector import Collector
-from protest.core.runner import TestRunner
-from protest.entities import SessionResult, TestResult
-from protest.plugin import PluginBase
+from apte import ApteSession, ApteSuite, ForEach, From, Skip, Use, fixture
+from apte.core.collector import Collector
+from apte.core.runner import TestRunner
+from apte.entities import SessionResult, TestResult
+from apte.plugin import PluginBase
 
 
 class TestConditionalSkipDecorator:
     """Test skip with callable condition parameter normalization and collection."""
 
     def test_skip_with_true_bool_creates_skip(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip=True, skip_reason="Always skip")
         def test_skipped() -> None:
@@ -28,7 +28,7 @@ class TestConditionalSkipDecorator:
         assert items[0].skip.reason == "Always skip"
 
     def test_skip_with_false_bool_is_none(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip=False)
         def test_normal() -> None:
@@ -41,7 +41,7 @@ class TestConditionalSkipDecorator:
         assert items[0].skip is None
 
     def test_skip_with_callable(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip=lambda: True, skip_reason="Callable skip")
         def test_skipped() -> None:
@@ -57,7 +57,7 @@ class TestConditionalSkipDecorator:
         assert items[0].skip.reason == "Callable skip"
 
     def test_skip_with_skip_object_and_condition(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(skip=Skip(condition=lambda: True, reason="Explicit Skip"))
         def test_skipped() -> None:
@@ -72,8 +72,8 @@ class TestConditionalSkipDecorator:
         assert items[0].skip.is_conditional
 
     def test_suite_skip_with_callable(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("test")
+        session = ApteSession()
+        suite = ApteSuite("test")
         session.add_suite(suite)
 
         @suite.test(skip=lambda: True, skip_reason="Suite conditional skip")
@@ -92,7 +92,7 @@ class TestStaticSkipExecution:
     """Test static skip (bool condition) execution."""
 
     def test_static_skip_true_skips_test(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @session.test(skip=True)
@@ -109,7 +109,7 @@ class TestStaticSkipExecution:
         assert executed == ["normal"]
 
     def test_static_skip_false_runs_test(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @session.test(skip=False)
@@ -122,7 +122,7 @@ class TestStaticSkipExecution:
         assert executed == ["normal"]
 
     def test_static_skip_counts_as_skipped(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):
@@ -149,7 +149,7 @@ class TestStaticSkipExecution:
         assert results["failed"] == 0
 
     def test_static_skip_emits_skip_event(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         skip_results: list[TestResult] = []
 
         class SkipPlugin(PluginBase):
@@ -173,7 +173,7 @@ class TestConditionalSkipExecution:
     """Test runtime skip (callable condition) execution."""
 
     def test_conditional_skip_no_params_true(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         condition_called = []
 
         def always_skip() -> bool:
@@ -190,7 +190,7 @@ class TestConditionalSkipExecution:
         assert condition_called == [True]
 
     def test_conditional_skip_no_params_false(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         def never_skip() -> bool:
@@ -206,7 +206,7 @@ class TestConditionalSkipExecution:
         assert executed == ["ran"]
 
     def test_conditional_skip_with_fixtures(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @fixture()
@@ -232,7 +232,7 @@ class TestConditionalSkipExecution:
         assert executed == ["normal"]
 
     def test_conditional_skip_receives_only_requested_kwargs(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         received_kwargs: list[str] = []
 
         @fixture()
@@ -263,7 +263,7 @@ class TestConditionalSkipExecution:
         assert received_kwargs == ["A"]
 
     def test_conditional_skip_counts_as_skipped(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):
@@ -286,7 +286,7 @@ class TestSkipPriority:
     """Test static skip takes priority over conditional skip."""
 
     def test_static_skip_reason_takes_priority_over_condition(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         skip_results: list[TestResult] = []
 
         class SkipPlugin(PluginBase):
@@ -307,7 +307,7 @@ class TestSkipPriority:
         assert skip_results[0].skip_reason == "Explicit skip reason"
 
     def test_conditional_skip_reason_in_result(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         skip_results: list[TestResult] = []
 
         class SkipPlugin(PluginBase):
@@ -331,7 +331,7 @@ class TestConditionalSkipWithParameterized:
     """Test conditional skip with parameterized tests."""
 
     def test_static_skip_applies_to_all_variations(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         VALUES = ForEach([1, 2, 3])  # noqa: N806 - test constant
@@ -346,7 +346,7 @@ class TestConditionalSkipWithParameterized:
         assert executed == []
 
     def test_static_skip_counts_all_variations(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):
@@ -371,7 +371,7 @@ class TestConditionalSkipWithXfailRetry:
     """Test interaction with xfail and retry."""
 
     def test_skip_with_xfail_skip_wins(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @session.test(skip=True, xfail="Known bug")
@@ -384,7 +384,7 @@ class TestConditionalSkipWithXfailRetry:
         assert executed == []
 
     def test_skip_with_retry_skip_wins(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         @session.test(skip=True, retry=3)
@@ -401,7 +401,7 @@ class TestConditionalSkipEdgeCases:
     """Test edge cases and error handling."""
 
     def test_skip_callable_raises_error(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):
@@ -424,7 +424,7 @@ class TestConditionalSkipEdgeCases:
         assert results["errors"] == 1
 
     def test_async_skip_condition(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
 
         async def async_condition() -> bool:
@@ -441,7 +441,7 @@ class TestConditionalSkipEdgeCases:
 
     def test_skip_callable_with_missing_fixture_causes_error(self) -> None:
         """Skip callable that requests a fixture not used by test causes ERROR."""
-        session = ProTestSession()
+        session = ApteSession()
         results: dict[str, int] = {}
 
         class CountingPlugin(PluginBase):

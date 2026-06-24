@@ -14,10 +14,10 @@ will have 1 instance, but only 2 tests can use it at the same time.
 import asyncio
 from typing import Annotated
 
+from apte import ApteSuite, FixtureFactory, Use, fixture
 from examples.yorkshire.app.domain import Job, Size, Yorkshire
 from examples.yorkshire.app.services import GroomingService
 from examples.yorkshire.tests.fixtures import yorkshire
-from protest import FixtureFactory, ProTestSuite, Use, fixture
 
 # =============================================================================
 # RATE-LIMITED GROOMING API FIXTURE
@@ -44,7 +44,7 @@ async def grooming_api() -> GroomingService:
 # RATE-LIMITED SUITE
 # =============================================================================
 
-rate_limited_suite = ProTestSuite(
+rate_limited_suite = ApteSuite(
     "RateLimited",
     tags=["api", "rate-limited"],
     description="Tests demonstrating fixture max_concurrency for rate-limited APIs",

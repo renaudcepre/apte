@@ -2,16 +2,16 @@
 
 from typing import Annotated
 
-from protest import ForEach, From, ProTestSession, ProTestSuite
-from protest.core.collector import Collector
-from protest.core.runner import TestRunner
-from protest.entities import SessionResult, TestResult
-from protest.plugin import PluginBase
+from apte import ApteSession, ApteSuite, ForEach, From
+from apte.core.collector import Collector
+from apte.core.runner import TestRunner
+from apte.entities import SessionResult, TestResult
+from apte.plugin import PluginBase
 
 
 class TestXfailDecorator:
     def test_xfail_with_bool_sets_default_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(xfail=True)
         def test_xfailed() -> None:
@@ -26,7 +26,7 @@ class TestXfailDecorator:
         assert items[0].xfail.reason == "Expected failure"
 
     def test_xfail_with_string_sets_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(xfail="Bug #123: known race condition")
         def test_xfailed() -> None:
@@ -41,7 +41,7 @@ class TestXfailDecorator:
         assert items[0].xfail.reason == "Bug #123: known race condition"
 
     def test_no_xfail_has_none_reason(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_normal() -> None:
@@ -55,8 +55,8 @@ class TestXfailDecorator:
         assert items[0].xfail is None
 
     def test_suite_xfail_decorator(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("test")
+        session = ApteSession()
+        suite = ApteSuite("test")
         session.add_suite(suite)
 
         @suite.test(xfail="Suite test xfailed")
@@ -74,7 +74,7 @@ class TestXfailDecorator:
 
 class TestXfailExecution:
     def test_xfailed_test_runs_and_counts_as_xfail(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
         results: dict[str, int] = {}
 
@@ -100,7 +100,7 @@ class TestXfailExecution:
         assert results["failed"] == 0
 
     def test_xpassed_test_runs_and_counts_as_xpass(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
         results: dict[str, int] = {}
 
@@ -126,7 +126,7 @@ class TestXfailExecution:
         assert results["passed"] == 0
 
     def test_xfail_emits_xfail_event(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         xfail_results: list[TestResult] = []
 
         class XfailPlugin(PluginBase):
@@ -147,7 +147,7 @@ class TestXfailExecution:
         assert xfail_results[0].xfail_reason == "My xfail reason"
 
     def test_xpass_emits_xpass_event(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         xpass_results: list[TestResult] = []
 
         class XpassPlugin(PluginBase):
@@ -168,7 +168,7 @@ class TestXfailExecution:
         assert xpass_results[0].xfail_reason == "Should fail"
 
     def test_xfail_does_not_affect_exit_code(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(xfail=True)
         def test_xfailed() -> None:
@@ -184,7 +184,7 @@ class TestXfailExecution:
         assert result.success is True
 
     def test_xpass_causes_failure_exit_code(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(xfail=True)
         def test_xpassed() -> None:
@@ -202,7 +202,7 @@ class TestXfailExecution:
 
 class TestXfailWithParameterizedTests:
     def test_xfail_applies_to_all_variations(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
         results: dict[str, int] = {}
 
@@ -230,7 +230,7 @@ class TestXfailWithParameterizedTests:
 
 class TestXfailWithSkip:
     def test_skip_takes_priority_over_xfail(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         executed = []
         results: dict[str, int] = {}
 

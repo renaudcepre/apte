@@ -4,10 +4,10 @@ from typing import Annotated
 
 import pytest
 
-from protest.di.container import FixtureContainer
-from protest.di.markers import Use
-from protest.entities import FixtureScope
-from protest.execution.context import TestExecutionContext
+from apte.di.container import FixtureContainer
+from apte.di.markers import Use
+from apte.entities import FixtureScope
+from apte.execution.context import TestExecutionContext
 
 
 @pytest.fixture

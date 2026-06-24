@@ -13,9 +13,9 @@ import logging
 from collections.abc import AsyncGenerator, Generator
 from typing import Annotated
 
+from apte import Use, factory, fixture
 from examples.yorkshire.app.domain import Job, Size, Yorkshire
 from examples.yorkshire.app.kennel import Kennel
-from protest import Use, factory, fixture
 
 
 @fixture()

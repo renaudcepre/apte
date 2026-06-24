@@ -1,6 +1,6 @@
 # Development
 
-Guide for contributing to ProTest.
+Guide for contributing to Apte.
 
 ## Prerequisites
 
@@ -11,8 +11,8 @@ Guide for contributing to ProTest.
 ## Setup
 
 ```bash
-git clone https://github.com/renaudcepre/protest.git
-cd protest
+git clone https://github.com/renaudcepre/apte.git
+cd apte
 just setup
 ```
 
@@ -32,7 +32,7 @@ just clean        # Remove cache files
 
 ## Running Tests
 
-ProTest uses pytest for its own test suite:
+Apte uses pytest for its own test suite:
 
 ```bash
 # All tests
@@ -72,8 +72,8 @@ pre-commit run --all-files
 ## Project Structure
 
 ```
-protest/
-├── protest/              # Main package
+apte/
+├── apte/              # Main package
 │   ├── cli/              # Command-line interface
 │   ├── core/             # Session, suite, runner, collector
 │   ├── di/               # Dependency injection (Use, From, ForEach)
@@ -85,7 +85,7 @@ protest/
 │   ├── reporting/        # Reporters (Rich, ASCII, CTRF, Web)
 │   ├── tags/             # Tag filtering plugin
 │   └── cache/            # Last-failed cache plugin
-├── tests/                # Test suite (mirrors protest/ structure)
+├── tests/                # Test suite (mirrors apte/ structure)
 ├── docs/                 # MkDocs documentation
 ├── web/                  # Web reporter UI (Vite + vanilla JS)
 └── examples/             # Example project (yorkshire)
@@ -105,5 +105,5 @@ Documentation source is in `docs/` using MkDocs with Material theme.
 ## Running the Example
 
 ```bash
-uv run protest run examples.yorkshire.tests.session:session
+uv run apte run examples.yorkshire.tests.session:session
 ```

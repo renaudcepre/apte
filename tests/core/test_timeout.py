@@ -8,22 +8,22 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from protest import ProTestSession, ProTestSuite
-from protest.core.runner import TestRunner
-from protest.events.types import Event
+from apte import ApteSession, ApteSuite
+from apte.core.runner import TestRunner
+from apte.events.types import Event
 
 if TYPE_CHECKING:
-    from protest.entities import TestResult
+    from apte.entities import TestResult
 
 
 class TestTimeoutBasic:
     """Basic timeout functionality tests."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_async_timeout_exceeded(self, session: ProTestSession) -> None:
+    def test_async_timeout_exceeded(self, session: ApteSession) -> None:
         """Async test exceeding timeout fails with TimeoutError."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_FAIL, lambda result: results.append(result))
@@ -40,7 +40,7 @@ class TestTimeoutBasic:
         assert isinstance(results[0].error, TimeoutError)
         assert results[0].timeout == 0.1
 
-    def test_async_within_timeout_passes(self, session: ProTestSession) -> None:
+    def test_async_within_timeout_passes(self, session: ApteSession) -> None:
         """Async test completing within timeout passes."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -56,7 +56,7 @@ class TestTimeoutBasic:
         assert len(results) == 1
         assert results[0].timeout == 1.0
 
-    def test_sync_timeout_exceeded(self, session: ProTestSession) -> None:
+    def test_sync_timeout_exceeded(self, session: ApteSession) -> None:
         """Sync test in executor exceeding timeout fails."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_FAIL, lambda result: results.append(result))
@@ -72,7 +72,7 @@ class TestTimeoutBasic:
         assert len(results) == 1
         assert isinstance(results[0].error, TimeoutError)
 
-    def test_no_timeout_runs_long(self, session: ProTestSession) -> None:
+    def test_no_timeout_runs_long(self, session: ApteSession) -> None:
         """Test without timeout runs without limit."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -93,10 +93,10 @@ class TestTimeoutWithXfail:
     """Timeout interaction with xfail."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_xfail_timeout_is_xfail(self, session: ProTestSession) -> None:
+    def test_xfail_timeout_is_xfail(self, session: ApteSession) -> None:
         """xfail=True + timeout → XFAIL."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_XFAIL, lambda result: results.append(result))
@@ -112,7 +112,7 @@ class TestTimeoutWithXfail:
         assert len(results) == 1
         assert results[0].xfail_reason == "Known slow"
 
-    def test_xfail_within_timeout_is_xpass(self, session: ProTestSession) -> None:
+    def test_xfail_within_timeout_is_xpass(self, session: ApteSession) -> None:
         """xfail=True + passes within timeout → XPASS."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_XPASS, lambda result: results.append(result))
@@ -132,10 +132,10 @@ class TestTimeoutWithSkip:
     """Timeout interaction with skip."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_skip_ignores_timeout(self, session: ProTestSession) -> None:
+    def test_skip_ignores_timeout(self, session: ApteSession) -> None:
         """Skipped test does not run, timeout never applies."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_SKIP, lambda result: results.append(result))
@@ -157,7 +157,7 @@ class TestTimeoutValidation:
 
     def test_negative_timeout_raises(self) -> None:
         """Negative timeout raises ValueError at decoration time."""
-        session = ProTestSession()
+        session = ApteSession()
 
         with pytest.raises(ValueError, match="timeout must be non-negative"):
 
@@ -167,7 +167,7 @@ class TestTimeoutValidation:
 
     def test_zero_timeout_allowed(self) -> None:
         """Zero timeout is valid (immediate timeout)."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test(timeout=0.0)
         async def test_zero() -> None:
@@ -180,15 +180,15 @@ class TestTimeoutWithSuite:
     """Timeout with suite decorator."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_suite_test_timeout(self, session: ProTestSession) -> None:
+    def test_suite_test_timeout(self, session: ApteSession) -> None:
         """Suite test can have timeout."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_FAIL, lambda result: results.append(result))
 
-        suite = ProTestSuite("API")
+        suite = ApteSuite("API")
         session.add_suite(suite)
 
         @suite.test(timeout=0.1)
@@ -204,7 +204,7 @@ class TestTimeoutWithSuite:
 
     def test_suite_negative_timeout_raises(self) -> None:
         """Suite test with negative timeout raises ValueError."""
-        suite = ProTestSuite("API")
+        suite = ApteSuite("API")
 
         with pytest.raises(ValueError, match="timeout must be non-negative"):
 
@@ -217,10 +217,10 @@ class TestTimeoutResult:
     """TestResult contains timeout information."""
 
     @pytest.fixture
-    def session(self) -> ProTestSession:
-        return ProTestSession()
+    def session(self) -> ApteSession:
+        return ApteSession()
 
-    def test_result_contains_timeout_value(self, session: ProTestSession) -> None:
+    def test_result_contains_timeout_value(self, session: ApteSession) -> None:
         """TestResult.timeout contains configured value."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_PASS, lambda result: results.append(result))
@@ -237,7 +237,7 @@ class TestTimeoutResult:
         assert len(results) == 1
         assert results[0].timeout == timeout_value
 
-    def test_result_error_is_timeout_error(self, session: ProTestSession) -> None:
+    def test_result_error_is_timeout_error(self, session: ApteSession) -> None:
         """TestResult.error is TimeoutError on timeout."""
         results: list[TestResult] = []
         session.events.on(Event.TEST_FAIL, lambda result: results.append(result))

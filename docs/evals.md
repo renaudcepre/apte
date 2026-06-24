@@ -27,16 +27,16 @@ Evaluate LLM outputs with scored metrics and historical tracking.
 
 A test produces **pass/fail**. An eval produces **scores** - numeric values (0.0–1.0) that measure output quality. Scores are aggregated across cases, tracked over time, and compared between runs.
 
-ProTest evals use the same infrastructure as tests: fixtures, DI, parallelism, tags. An eval is a test that returns a value, scored by evaluators.
+Apte evals use the same infrastructure as tests: fixtures, DI, parallelism, tags. An eval is a test that returns a value, scored by evaluators.
 
 !!! tip "First-run expectations: don't expect 100% green"
 
     Unlike tests, evals are **expected to have failing cases** - that's
-    the signal you're measuring. `protest eval` still exits 1 when any
+    the signal you're measuring. `apte eval` still exits 1 when any
     case fails a `Verdict` (so CI surfaces regressions), but the
     failures are not bugs, they're data points. The aggregate-stats
     table is designed for this - you watch the metrics drift over time.
-    Every run is recorded to `.protest/history.jsonl` so the trend
+    Every run is recorded to `.apte/history.jsonl` so the trend
     accumulates from day one (browsing and run-comparison tooling lands
     in a future release).
 
@@ -46,17 +46,17 @@ ProTest evals use the same infrastructure as tests: fixtures, DI, parallelism, t
 # evals/session.py
 from typing import Annotated
 
-from protest import ForEach, From, ProTestSession
-from protest.evals import EvalCase, ModelLabel, evaluator
-from protest.evals.evaluators import contains_keywords
-from protest.evals import EvalSuite
+from apte import ForEach, From, ApteSession
+from apte.evals import EvalCase, ModelLabel, evaluator
+from apte.evals.evaluators import contains_keywords
+from apte.evals import EvalSuite
 
 cases = ForEach([
     EvalCase(inputs="Who is Marie?", expected="Marie, Resistance", name="lookup"),
     EvalCase(inputs="What is 2+2?", expected="4", name="math"),
 ])
 
-session = ProTestSession()
+session = ApteSession()
 
 chatbot_suite = EvalSuite("chatbot", model=ModelLabel(name="gpt-4o-mini"))
 session.add_suite(chatbot_suite)
@@ -67,7 +67,7 @@ async def chatbot(case: Annotated[EvalCase, From(cases)]) -> str:
 ```
 
 ```bash
-protest eval evals.session:session
+apte eval evals.session:session
 ```
 
 ## How It Works
@@ -76,7 +76,7 @@ protest eval evals.session:session
 
 1. Your function receives case data via `ForEach`/`From` (same as parameterized tests)
 2. It returns the output (string, object, anything)
-3. ProTest passes the output to evaluators → scores
+3. Apte passes the output to evaluators → scores
 4. Bool verdicts determine pass/fail
 5. Aggregated stats appear in the terminal
 
@@ -84,11 +84,11 @@ The rest of the pipeline - fixtures, DI, parallelism, reporters - works identica
 
 ## EvalSuite
 
-`EvalSuite` groups eval cases. It's the eval equivalent of `ProTestSuite` - it forces `kind=EVAL` and carries model/judge configuration. Model and judge are suite-level config: each suite declares which model produced its results and which judge scores them.
+`EvalSuite` groups eval cases. It's the eval equivalent of `ApteSuite` - it forces `kind=EVAL` and carries model/judge configuration. Model and judge are suite-level config: each suite declares which model produced its results and which judge scores them.
 
 ```python
-from protest.evals import EvalSuite
-from protest.evals import ModelLabel
+from apte.evals import EvalSuite
+from apte.evals import ModelLabel
 
 chatbot_suite = EvalSuite("chatbot", model=ModelLabel(name="gpt-4o-mini"))
 session.add_suite(chatbot_suite)
@@ -103,7 +103,7 @@ async def chatbot(case: Annotated[EvalCase, From(cases)]) -> str:
 Typed dataclass for eval case data. All eval cases **must** use `EvalCase` - plain dicts are not supported.
 
 ```python
-from protest.evals import EvalCase
+from apte.evals import EvalCase
 
 cases = ForEach([
     EvalCase(inputs="What is 2+2?", expected="4", name="math"),
@@ -117,7 +117,7 @@ cases = ForEach([
 | `expected` | `Any` | Expected output (passed to evaluators as `ctx.expected_output`) |
 | `name` | `str` | Case identifier (used in test IDs and history) |
 | `evaluators` | `list` | Per-case evaluators (added to suite-level ones) |
-| `tags` | `list[str]` | First-class tags - flow to `protest eval --tag …` (see below) |
+| `tags` | `list[str]` | First-class tags - flow to `apte eval --tag …` (see below) |
 | `metadata` | `dict` | Arbitrary metadata, opaque to the framework |
 
 ### Why `EvalCase` and not a dict?
@@ -126,7 +126,7 @@ The runtime reads case data via attribute access (`case.expected`, `case.metadat
 
 ### Per-case `tags`
 
-`EvalCase.tags` is a first-class field. Tags flow through the test collector and become first-class on the resulting `TestItem`, so `protest eval --tag slow` works out of the box. Use `metadata` for any other free-form annotation the framework should ignore.
+`EvalCase.tags` is a first-class field. Tags flow through the test collector and become first-class on the resulting `TestItem`, so `apte eval --tag slow` works out of the box. Use `metadata` for any other free-form annotation the framework should ignore.
 
 ```python
 EvalCase(
@@ -139,8 +139,8 @@ EvalCase(
 ```
 
 ```bash
-protest eval evals.session:session --tag slow
-protest eval evals.session:session --no-tag slow
+apte eval evals.session:session --tag slow
+apte eval evals.session:session --no-tag slow
 ```
 
 ## Evaluators
@@ -180,7 +180,7 @@ Evaluators return `bool` (simple verdict) or a `dataclass` (structured result). 
 
 ```python
 from typing import Annotated
-from protest.evals import Metric, Verdict, Reason
+from apte.evals import Metric, Verdict, Reason
 ```
 
 | Annotation | Role |
@@ -237,7 +237,7 @@ def not_empty(ctx: EvalContext) -> bool:
 ```python
 from dataclasses import dataclass
 from typing import Annotated
-from protest.evals import Metric, Verdict, Reason
+from apte.evals import Metric, Verdict, Reason
 
 @dataclass
 class KeywordScores:
@@ -298,7 +298,7 @@ EvalCase(name="hard_causal", inputs="hard causal", evaluators=[keyword_check(key
 Skip expensive evaluators (LLM judges) when cheap ones already fail:
 
 ```python
-from protest.evals import ShortCircuit
+from apte.evals import ShortCircuit
 
 evaluators=[
     not_empty,                                                  # always runs
@@ -406,7 +406,7 @@ async def pipeline_eval(
 
 ## ModelLabel
 
-`ModelLabel` is a **passive label** that ProTest stores in the history alongside each run, so you can attribute results to a specific model and compare runs side-by-side. It does not route requests, set a temperature, pick a provider, or otherwise touch any LLM - the actual model wiring happens inside *your* task function (or the agent / SDK it calls).
+`ModelLabel` is a **passive label** that Apte stores in the history alongside each run, so you can attribute results to a specific model and compare runs side-by-side. It does not route requests, set a temperature, pick a provider, or otherwise touch any LLM - the actual model wiring happens inside *your* task function (or the agent / SDK it calls).
 
 ```python
 suite = EvalSuite("pipeline", model=ModelLabel(name="qwen-2.5"))
@@ -414,7 +414,7 @@ suite = EvalSuite("pipeline", model=ModelLabel(name="qwen-2.5"))
 
 ## Judge
 
-A `Judge` is a protocol for LLM-as-judge evaluators. ProTest owns the interface - you plug in your LLM library.
+A `Judge` is a protocol for LLM-as-judge evaluators. Apte owns the interface - you plug in your LLM library.
 
 ### The Protocol
 
@@ -431,7 +431,7 @@ The `judge()` method returns a `JudgeResponse[T]` that wraps the output with opt
 
 ```python
 from pydantic_ai import Agent
-from protest.evals import JudgeResponse
+from apte.evals import JudgeResponse
 
 class PydanticAIJudge:
     name = "gpt-4o-mini"       # used in history
@@ -519,7 +519,7 @@ These are available in history, letting you track LLM usage across runs.
 If your eval task calls an LLM, you can report usage by returning `TaskResult` instead of a plain value:
 
 ```python
-from protest.evals import TaskResult
+from apte.evals import TaskResult
 
 @chatbot_suite.eval(evaluators=[my_scorer])
 async def chatbot(case: Annotated[EvalCase, From(cases)]) -> TaskResult[str]:
@@ -533,11 +533,11 @@ async def chatbot(case: Annotated[EvalCase, From(cases)]) -> TaskResult[str]:
     )
 ```
 
-This is **opt-in** - returning a plain `str` still works. ProTest unwraps `TaskResult` transparently: evaluators see the plain output, usage stats flow to the reporter and history.
+This is **opt-in** - returning a plain `str` still works. Apte unwraps `TaskResult` transparently: evaluators see the plain output, usage stats flow to the reporter and history.
 
 ## Usage Display
 
-When task or judge usage data is available, ProTest shows a summary after the eval stats:
+When task or judge usage data is available, Apte shows a summary after the eval stats:
 
 ```
   Passed: 16/26 (61.5%)
@@ -583,7 +583,7 @@ evaluators are added or removed.
 
 A collision is still possible in one case: the same evaluator name attached
 twice to one case (the same `@evaluator` function rebound with different
-kwargs, or two functions sharing a name). ProTest raises
+kwargs, or two functions sharing a name). Apte raises
 `ScoreNameCollisionError` at runtime so the duplicate is loud instead of
 silently overwriting the other's scores. Wrap each binding in its own named
 `@evaluator` function to give them distinct names.
@@ -593,7 +593,7 @@ silently overwriting the other's scores. Wrap each binding in its own named
 Track which model produced each eval suite's results. Each `EvalSuite` can have its own model:
 
 ```python
-session = ProTestSession()
+session = ApteSession()
 
 pipeline_suite = EvalSuite("pipeline", model=ModelLabel(name="qwen-2.5"))
 chatbot_suite = EvalSuite("chatbot", model=ModelLabel(name="mistral-7b"))
@@ -608,7 +608,7 @@ async def pipeline_eval(case, driver) -> str: ...
 async def chatbot_eval(case, deps) -> str: ...
 ```
 
-Each run records the model per suite in `.protest/history.jsonl`, so a
+Each run records the model per suite in `.apte/history.jsonl`, so a
 mixed-model session (e.g. `pipeline` on `qwen-2.5`, `chatbot` on
 `mistral-7b`) keeps each suite's model alongside its scores.
 
@@ -616,29 +616,29 @@ mixed-model session (e.g. `pipeline` on `qwen-2.5`, `chatbot` on
 
 ```bash
 # Run evals
-protest eval evals.session:session
+apte eval evals.session:session
 
 # Parallelism
-protest eval evals.session:session -n 4
+apte eval evals.session:session -n 4
 
 # Filter by tag
-protest eval evals.session:session --tag chatbot
+apte eval evals.session:session --tag chatbot
 
 # Filter by name
-protest eval evals.session:session -k "lookup"
+apte eval evals.session:session -k "lookup"
 
 # Re-run failures only
-protest eval evals.session:session --last-failed
+apte eval evals.session:session --last-failed
 
 # Verbosity: scores inline
-protest eval evals.session:session -v
+apte eval evals.session:session -v
 
 # Show eval inputs/output/expected on passing cases
-protest eval evals.session:session --show-output
+apte eval evals.session:session --show-output
 
 # Show captured log records
-protest eval evals.session:session --show-logs
-protest eval evals.session:session --show-logs=DEBUG
+apte eval evals.session:session --show-logs
+apte eval evals.session:session --show-logs=DEBUG
 ```
 
 Flags are independent and combinable: `-v --show-output --show-logs`.
@@ -664,15 +664,15 @@ Flags are independent and combinable: `-v --show-output --show-logs`.
 │ keyword_check.recall         │ 0.50 │ 0.50 │ 0.00 │ 1.00 │
 └──────────────────────────────┴──────┴──────┴──────┴──────┘
   Passed: 1/2 (50.0%)
-  Results: .protest/results/chatbot_20260329_091422
+  Results: .apte/results/chatbot_20260329_091422
 ```
 
 ### Per-Case Results
 
-Each eval case writes a markdown file to `.protest/results/<suite>_<timestamp>/`:
+Each eval case writes a markdown file to `.apte/results/<suite>_<timestamp>/`:
 
 ```
-.protest/results/chatbot_20260329_091422/
+.apte/results/chatbot_20260329_091422/
 ├── lookup.md
 ├── causal.md
 └── negative.md
@@ -680,7 +680,7 @@ Each eval case writes a markdown file to `.protest/results/<suite>_<timestamp>/`
 
 ## History
 
-Every eval run is persisted as one JSONL entry in `.protest/history.jsonl`,
+Every eval run is persisted as one JSONL entry in `.apte/history.jsonl`,
 recorded from the first run so trends accumulate over time. Each entry holds
 per-suite pass rates, per-case verdicts and scores, the model per suite, and
 git metadata. Tooling to browse, trend and compare runs lands in a future
@@ -704,7 +704,7 @@ because the system under test regressed.
 For long-running fixtures, use `console.print` to show progress without polluting test capture:
 
 ```python
-from protest import console
+from apte import console
 
 @fixture()
 async def pipeline():

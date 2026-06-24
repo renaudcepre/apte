@@ -3,7 +3,7 @@ requires = ["setuptools>=82.0.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "protest"
+name = "apte"
 version = "0.2.0"
 description = "Async-first Python testing framework"
 readme = "README.md"
@@ -36,11 +36,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/renaudcepre/protest"
-Documentation = "https://renaudcepre.github.io/protest/"
-Repository = "https://github.com/renaudcepre/protest"
-Changelog = "https://github.com/renaudcepre/protest/blob/main/CHANGELOG.md"
-Issues = "https://github.com/renaudcepre/protest/issues"
+Homepage = "https://github.com/renaudcepre/apte"
+Documentation = "https://renaudcepre.github.io/apte/"
+Repository = "https://github.com/renaudcepre/apte"
+Changelog = "https://github.com/renaudcepre/apte/blob/main/CHANGELOG.md"
+Issues = "https://github.com/renaudcepre/apte/issues"
 
 [project.optional-dependencies]
 rich = [
@@ -91,31 +91,31 @@ ignore = [
     "PLW0108", # Lambdas required: EventBus uses weakrefs, can't ref list.append directly
     "ASYNC240", # os.path in async tests is fine (no real I/O concerns in tests)
 ]
-"protest/cli/**" = [
+"apte/cli/**" = [
     "T201", # print allowed in CLI
     "PLR2004", # magic values for arg parsing
 ]
-"protest/core/session.py" = [
+"apte/core/session.py" = [
     "PLR0913", # many args is deliberate API design
 ]
-"protest/core/execution/test_executor.py" = [
+"apte/core/execution/test_executor.py" = [
     "PLR0915", # _run_test is inherently complex (retry loop + eval capture)
 ]
-"protest/history/**" = [
+"apte/history/**" = [
     "S603", # subprocess git calls are safe
     "PLR0913", # load_history has many filter params by design
 ]
-"protest/evals/**" = [
+"apte/evals/**" = [
     "T201", # print for eval reporting
     "PLR0913", # adapter functions have many params by design
 ]
-"protest/reporting/ascii.py" = [
+"apte/reporting/ascii.py" = [
     "T201", # print is the purpose of this module
 ]
-"protest/reporting/rich_reporter.py" = [
+"apte/reporting/rich_reporter.py" = [
     "T201", # print is the purpose of this module
 ]
-"protest/reporting/factory.py" = [
+"apte/reporting/factory.py" = [
     "PLC0415", # lazy imports for optional rich dependency
     "PLR0911", # many returns is decision tree pattern
 ]
@@ -126,7 +126,7 @@ ignore = [
 
 [tool.coverage.run]
 omit = [
-    "protest/compat.py", # Version-specific imports, impossible to cover without multi-version CI
+    "apte/compat.py", # Version-specific imports, impossible to cover without multi-version CI
 ]
 
 [tool.mypy]
@@ -154,11 +154,11 @@ filterwarnings = [
 ]
 
 [project.scripts]
-protest = "protest.cli.main:main"
+apte = "apte.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["protest*"]
+include = ["apte*"]
 
 [dependency-groups]
 dev = [

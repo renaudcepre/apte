@@ -1,6 +1,6 @@
 # Dependency Injection
 
-ProTest uses explicit dependency injection. You declare what a test or fixture needs using type annotations.
+Apte uses explicit dependency injection. You declare what a test or fixture needs using type annotations.
 
 ## The Use Marker
 
@@ -8,9 +8,9 @@ Dependencies are declared using `Annotated[Type, Use(fixture)]`:
 
 ```python
 from typing import Annotated
-from protest import ProTestSession, Use, fixture
+from apte import ApteSession, Use, fixture
 
-session = ProTestSession()
+session = ApteSession()
 
 @fixture
 def database():
@@ -26,7 +26,7 @@ The `Use` marker takes a **function reference**, not a string. This makes depend
 
 ### `Type` is a hint, not a runtime check
 
-In `Annotated[Type, Use(fixture)]`, `Type` is a **type hint for your IDE and static checkers** - ProTest does not validate at runtime that `fixture()` actually returns a `Type`. This matches FastAPI's behavior with `Annotated[Type, Depends(fn)]`: the type is taken on faith, not enforced.
+In `Annotated[Type, Use(fixture)]`, `Type` is a **type hint for your IDE and static checkers** - Apte does not validate at runtime that `fixture()` actually returns a `Type`. This matches FastAPI's behavior with `Annotated[Type, Depends(fn)]`: the type is taken on faith, not enforced.
 
 ```python
 @fixture()
@@ -35,7 +35,7 @@ def returns_str() -> str:
 
 @session.test()
 def test_mismatch(value: Annotated[int, Use(returns_str)]):
-    # `value` is actually a `str` at runtime - ProTest will not warn.
+    # `value` is actually a `str` at runtime - Apte will not warn.
     # The mismatch surfaces only when `value` is used as an `int`.
     ...
 ```
@@ -85,7 +85,7 @@ async def test_query(db: Annotated[Database, Use(database)]):
 
 ## Resolution Order
 
-ProTest resolves dependencies automatically:
+Apte resolves dependencies automatically:
 
 1. Analyze the test's parameters
 2. For each `Use(fixture)`, recursively resolve that fixture's dependencies

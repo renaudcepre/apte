@@ -1,21 +1,21 @@
 # Sessions & Suites
 
-ProTest organizes tests in a hierarchy: **Session** → **Suites** → **Tests**.
+Apte organizes tests in a hierarchy: **Session** → **Suites** → **Tests**.
 
-## ProTestSession
+## ApteSession
 
 A session is the root of your test hierarchy. You typically have one session per project, or one per major component in a monorepo.
 
 ```python
-from protest import ProTestSession
+from apte import ApteSession
 
-session = ProTestSession()
+session = ApteSession()
 ```
 
 ### Session Options
 
 ```python
-session = ProTestSession(
+session = ApteSession(
     concurrency=4,  # Default parallelism (overridden by -n)
 )
 ```
@@ -37,7 +37,7 @@ These tests don't belong to any suite.
 Bind fixtures to the session with `bind()`:
 
 ```python
-from protest import fixture
+from apte import fixture
 
 @fixture
 def database():
@@ -48,14 +48,14 @@ def database():
 session.bind(database)  # → SESSION scope
 ```
 
-## ProTestSuite
+## ApteSuite
 
 Suites group related tests together. They also define a scope boundary for fixtures.
 
 ```python
-from protest import ProTestSuite
+from apte import ApteSuite
 
-api_suite = ProTestSuite("API")
+api_suite = ApteSuite("API")
 session.add_suite(api_suite)
 
 @api_suite.test()
@@ -66,7 +66,7 @@ async def test_endpoint():
 ### Suite Options
 
 ```python
-api_suite = ProTestSuite(
+api_suite = ApteSuite(
     "API",
     description="Integration tests for REST API",  # Optional documentation
     max_concurrency=2,          # Cap parallelism for this suite
@@ -91,9 +91,9 @@ api_suite.bind(api_client)  # → SUITE scope
 Suites can contain other suites, creating a hierarchy:
 
 ```python
-api_suite = ProTestSuite("API")
-users_suite = ProTestSuite("Users")
-orders_suite = ProTestSuite("Orders")
+api_suite = ApteSuite("API")
+users_suite = ApteSuite("Users")
+orders_suite = ApteSuite("Orders")
 
 api_suite.add_suite(users_suite)
 api_suite.add_suite(orders_suite)

@@ -12,7 +12,7 @@ updates:
         dependency-type: "development"
     # Runtime deps (typing-extensions, rich, websockets) are intentionally
     # left ungrouped: each gets its own PR so we can review floor raises that
-    # would narrow who can install protest.
+    # would narrow who can install apte.
 
   - package-ecosystem: "github-actions"
     directory: "/"

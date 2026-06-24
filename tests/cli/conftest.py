@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from protest.cli.main import main
+from apte.cli.main import main
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -45,7 +45,7 @@ def fixtures_dir() -> Path:
 
 
 @pytest.fixture
-def run_protest(fixtures_dir: Path) -> Callable[..., CLIResult]:
+def run_apte(fixtures_dir: Path) -> Callable[..., CLIResult]:
     def _run(*args: str, app_dir: Path | None = None) -> CLIResult:
         effective_app_dir = str(app_dir or fixtures_dir)
 
@@ -57,7 +57,7 @@ def run_protest(fixtures_dir: Path) -> Callable[..., CLIResult]:
         stdout_capture = StringIO()
         stderr_capture = StringIO()
 
-        sys.argv = ["protest", *args]
+        sys.argv = ["apte", *args]
 
         if effective_app_dir not in sys.path:
             sys.path.insert(0, effective_app_dir)

@@ -1,6 +1,6 @@
 """Example: Capturing subprocess output in tests.
 
-ProTest captures Python print() and logging automatically, but subprocess
+Apte captures Python print() and logging automatically, but subprocess
 output (which writes directly to OS file descriptors) requires explicit
 capture.
 
@@ -10,10 +10,10 @@ async-safe subprocess execution with automatic output capture.
 
 import subprocess
 
-from protest import ProTestSession, ProTestSuite, Shell
+from apte import ApteSession, ApteSuite, Shell
 
-session = ProTestSession()
-suite = ProTestSuite("SubprocessCapture")
+session = ApteSession()
+suite = ApteSuite("SubprocessCapture")
 session.add_suite(suite)
 
 
@@ -90,7 +90,7 @@ def test_sync_subprocess() -> None:
         text=True,
     )
 
-    # Print captured output so ProTest can capture it
+    # Print captured output so Apte can capture it
     if result.stdout:
         print(result.stdout, end="")  # noqa: T201 - demo output
 

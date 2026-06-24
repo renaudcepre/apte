@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 from jsonschema import validate
 
-from protest.entities import SessionResult, SuitePath, TestResult
-from protest.reporting.ctrf import CTRFReporter
+from apte.entities import SessionResult, SuitePath, TestResult
+from apte.reporting.ctrf import CTRFReporter
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,10 +32,10 @@ class TestCTRFReportStructure:
         assert report["specVersion"] == "0.0.0"
         assert "reportId" in report
         assert "timestamp" in report
-        assert report["generatedBy"] == "ProTest"
+        assert report["generatedBy"] == "Apte"
 
         results = report["results"]
-        assert results["tool"]["name"] == "ProTest"
+        assert results["tool"]["name"] == "Apte"
         assert "version" in results["tool"]
 
         summary = results["summary"]
@@ -360,7 +360,7 @@ class TestCTRFEnvironment:
         assert "osPlatform" in env
         assert "osVersion" in env
 
-    @patch("protest.reporting.ctrf.subprocess.run")
+    @patch("apte.reporting.ctrf.subprocess.run")
     def test_git_branch_included_when_available(
         self,
         mock_run: Any,
@@ -415,7 +415,7 @@ class TestCTRFGitErrors:
         else:
             exc = exception_type(*exception_args)  # type: ignore[operator]
 
-        with patch("protest.reporting.ctrf.subprocess.run", side_effect=exc):
+        with patch("apte.reporting.ctrf.subprocess.run", side_effect=exc):
             ctrf_reporter.on_session_start()
             ctrf_reporter.on_session_end(SessionResult(passed=0, failed=0))
 
@@ -426,7 +426,7 @@ class TestCTRFGitErrors:
 
 
 class TestCTRFVersionError:
-    @patch("protest.reporting.ctrf.get_version")
+    @patch("apte.reporting.ctrf.get_version")
     def test_version_returns_unknown_on_error(
         self,
         mock_version: Any,

@@ -15,8 +15,8 @@ from typing import Annotated
 
 import pytest
 
-from protest import ForEach, From, ProTestSession
-from protest.evals import (
+from apte import ApteSession, ForEach, From
+from apte.evals import (
     EvalCase,
     EvalContext,
     EvalSuite,
@@ -24,8 +24,8 @@ from protest.evals import (
     Verdict,
     evaluator,
 )
-from protest.evals.wrapper import make_eval_wrapper
-from protest.exceptions import ScoreNameCollisionError
+from apte.evals.wrapper import make_eval_wrapper
+from apte.exceptions import ScoreNameCollisionError
 
 _cases = ForEach([EvalCase(inputs="x", name="c1")])
 
@@ -153,7 +153,7 @@ class TestCollisionRaises:
         assert calls == []
 
     def test_collision_inside_short_circuit_detected(self) -> None:
-        from protest.evals import ShortCircuit  # noqa: PLC0415
+        from apte.evals import ShortCircuit  # noqa: PLC0415
 
         with pytest.raises(ScoreNameCollisionError):
             asyncio.run(
@@ -169,7 +169,7 @@ class TestSkippedPlaceholderNamespacing:
     real run would produce, so score keys are stable across runs."""
 
     def test_skipped_dataclass_evaluator_keeps_namespaced_keys(self) -> None:
-        from protest.evals import ShortCircuit  # noqa: PLC0415
+        from apte.evals import ShortCircuit  # noqa: PLC0415
 
         @evaluator
         def _gate(ctx: EvalContext) -> bool:
@@ -188,7 +188,7 @@ class TestSkippedPlaceholderNamespacing:
         assert "_shape_a" not in payload.scores
 
     def test_skipped_bool_evaluator_keeps_bare_name(self) -> None:
-        from protest.evals import ShortCircuit  # noqa: PLC0415
+        from apte.evals import ShortCircuit  # noqa: PLC0415
 
         @evaluator
         def _gate(ctx: EvalContext) -> bool:
@@ -207,9 +207,9 @@ class TestSkippedPlaceholderNamespacing:
 class TestSessionPath:
     def test_session_with_shared_field_names_runs_clean(self) -> None:
         """Smoke check: shared `detail` fields pass through the full session."""
-        from protest.api import run_session  # noqa: PLC0415 - heavy import
+        from apte.api import run_session  # noqa: PLC0415 - heavy import
 
-        session = ProTestSession()
+        session = ApteSession()
         suite = EvalSuite("evals")
 
         @suite.eval(evaluators=[_shape_a, _shape_b])

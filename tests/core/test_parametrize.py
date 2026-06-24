@@ -5,11 +5,11 @@ from typing import Annotated
 
 import pytest
 
-from protest import ForEach, From, ProTestSession, ProTestSuite, Use
-from protest.core.collector import Collector
-from protest.core.runner import TestRunner
-from protest.di.decorators import fixture
-from protest.entities import SuitePath
+from apte import ApteSession, ApteSuite, ForEach, From, Use
+from apte.core.collector import Collector
+from apte.core.runner import TestRunner
+from apte.di.decorators import fixture
+from apte.entities import SuitePath
 
 
 @dataclass
@@ -52,7 +52,7 @@ class TestParameterizedCollection:
     """Tests for test collection with From() parameters."""
 
     def test_single_foreach(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         numbers = ForEach([1, 2, 3])
 
         @session.test()
@@ -77,7 +77,7 @@ class TestParameterizedCollection:
         assert items[0].test_name == "test_numbers"
 
     def test_dataclass_with_custom_ids(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         scenarios = ForEach(
             [
@@ -100,7 +100,7 @@ class TestParameterizedCollection:
         assert items[1].case_ids == ["zero"]
 
     def test_cartesian_product(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         users = ForEach(["alice", "bob"], ids=lambda u: u)
         roles = ForEach(["admin", "user"], ids=lambda r: r)
@@ -125,7 +125,7 @@ class TestParameterizedCollection:
         assert ["bob", "user"] in all_case_ids
 
     def test_foreach_with_fixtures(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @fixture()
         def multiplier() -> int:
@@ -151,7 +151,7 @@ class TestParameterizedCollection:
         assert "num" in items[0].case_kwargs
 
     def test_no_foreach_single_item(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_simple() -> None:
@@ -167,7 +167,7 @@ class TestParameterizedCollection:
         assert "[" not in items[0].node_id
 
     def test_triple_cartesian(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         a_vals = ForEach([1, 2])
         b_vals = ForEach(["x", "y"])
@@ -188,8 +188,8 @@ class TestParameterizedCollection:
         assert len(items) == expected_item_count
 
     def test_structured_data_for_reporters(self) -> None:
-        session = ProTestSession()
-        suite = ProTestSuite("API")
+        session = ApteSession()
+        suite = ApteSuite("API")
         session.add_suite(suite)
 
         users = ForEach(["alice"], ids=lambda u: u)
@@ -214,7 +214,7 @@ class TestParameterizedExecution:
     """Tests for actual execution of parameterized tests."""
 
     def test_foreach_values_injected(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         collected_values: list[int] = []
 
         numbers = ForEach([10, 20, 30])
@@ -230,7 +230,7 @@ class TestParameterizedExecution:
         assert sorted(collected_values) == [10, 20, 30]
 
     def test_cartesian_product_execution(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         collected_pairs: list[tuple[str, str]] = []
 
         users = ForEach(["alice", "bob"], ids=lambda u: u)
@@ -255,7 +255,7 @@ class TestParameterizedExecution:
         assert ("bob", "user") in collected_pairs
 
     def test_foreach_with_fixture_execution(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
         results: list[int] = []
 
         @fixture()
@@ -280,7 +280,7 @@ class TestParameterizedExecution:
         assert sorted(results) == [10, 20, 30]
 
     def test_foreach_failure_reported_correctly(self) -> None:
-        session = ProTestSession()
+        session = ApteSession()
 
         numbers = ForEach([1, 2, 3])
 

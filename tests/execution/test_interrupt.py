@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
-from protest import ProTestSession, Use, fixture
-from protest.core.runner import TestRunner
-from protest.execution.interrupt import InterruptHandler, InterruptState
+from apte import ApteSession, Use, fixture
+from apte.core.runner import TestRunner
+from apte.execution.interrupt import InterruptHandler, InterruptState
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ class TestInterruptStateTransitions:
         loop = asyncio.new_event_loop()
 
         # Mock os._exit for the entire test to prevent watchdog from exiting
-        with patch("protest.execution.interrupt.os._exit"):
+        with patch("apte.execution.interrupt.os._exit"):
             handler.install(loop)
 
             handler._handle_signal(signal.SIGINT, None)
@@ -218,7 +218,7 @@ class TestRunnerInterruptIntegration:
 
     def test_run_result_interrupted_false_on_normal_run(self) -> None:
         """Given normal test run, when completed, then interrupted is False."""
-        session = ProTestSession()
+        session = ApteSession()
 
         @session.test()
         def test_pass() -> None:
@@ -232,7 +232,7 @@ class TestRunnerInterruptIntegration:
 
     def test_run_result_interrupted_true_when_soft_stop_before_tests(self) -> None:
         """Given soft stop triggered before tests, then result.interrupted is True and no tests run."""
-        session = ProTestSession()
+        session = ApteSession()
         executed: list[str] = []
 
         @session.test()
@@ -258,7 +258,7 @@ class TestRunnerInterruptIntegration:
 
     def test_teardowns_still_run_on_normal_completion(self) -> None:
         """Given test with fixture, when test passes, then teardown is executed."""
-        session = ProTestSession()
+        session = ApteSession()
         teardown_called: list[str] = []
 
         @fixture()
@@ -281,7 +281,7 @@ class TestRunnerInterruptIntegration:
 
     def test_soft_stop_prevents_pending_tests_from_starting(self) -> None:
         """Given soft stop triggered during first test, then pending tests are skipped."""
-        session = ProTestSession(concurrency=1)
+        session = ApteSession(concurrency=1)
         executed: list[str] = []
         runner: TestRunner | None = None
 

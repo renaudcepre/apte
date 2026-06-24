@@ -1,0 +1,31 @@
+"""Reporter factory with environment detection."""
+
+import os
+
+from apte.plugin import PluginBase
+
+
+def get_reporter(force_no_color: bool = False) -> PluginBase:
+    """Select the best reporter based on environment."""
+    if force_no_color or os.environ.get("NO_COLOR"):
+        from apte.reporting.ascii import AsciiReporter
+
+        return AsciiReporter()
+
+    if os.environ.get("TERM") == "dumb":
+        from apte.reporting.ascii import AsciiReporter
+
+        return AsciiReporter()
+
+    try:
+        from rich.console import Console
+
+        Console()
+    except ImportError:
+        from apte.reporting.ascii import AsciiReporter
+
+        return AsciiReporter()
+
+    from apte.reporting.rich_reporter import RichReporter
+
+    return RichReporter()

@@ -7,21 +7,21 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from protest.entities import (
+from apte.entities import (
     HandlerInfo,
     SessionResult,
     TestItem,
     TestResult,
     TestRetryInfo,
 )
-from protest.events.types import Event
-from protest.reporting.format import (
+from apte.events.types import Event
+from apte.reporting.format import (
     MIN_DURATION_THRESHOLD,
 )
-from protest.reporting.format import (
+from apte.reporting.format import (
     format_duration as _format_duration,
 )
-from protest.reporting.rich_reporter import RichReporter
+from apte.reporting.rich_reporter import RichReporter
 
 
 class TestFormatDuration:
