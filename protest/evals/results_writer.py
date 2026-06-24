@@ -33,6 +33,7 @@ class EvalResultsWriter(PluginBase):
             (history_dir / "results") if history_dir else DEFAULT_RESULTS_DIR
         )
         self._run_dirs: dict[str, Path] = {}
+        self._used_stems: dict[str, set[str]] = {}
 
     @classmethod
     def activate(cls, ctx: PluginContext) -> EvalResultsWriter:
@@ -54,7 +55,10 @@ class EvalResultsWriter(PluginBase):
     def _write_case_file(self, case_result: EvalCaseResult, suite_name: str) -> None:
         if suite_name not in self._run_dirs:
             self._run_dirs[suite_name] = _make_run_dir(suite_name, self._results_base)
-        _write_case_file(case_result, self._run_dirs[suite_name])
+            self._used_stems[suite_name] = set()
+        _write_case_file(
+            case_result, self._run_dirs[suite_name], self._used_stems[suite_name]
+        )
 
     def on_eval_suite_end(self, report: Any) -> None:
         """Print results dir path for the suite."""
@@ -72,19 +76,46 @@ class EvalResultsWriter(PluginBase):
 
 
 def _make_run_dir(suite_name: str, base_dir: Path | None = None) -> Path:
-    """Create and return the timestamped directory for this run."""
+    """Create and return a unique timestamped directory for this run.
+
+    The timestamp has one-second resolution, so two runs of the same suite
+    within the same second (or two processes racing) would otherwise land on
+    the same directory and merge their case files. Create with
+    ``exist_ok=False`` and bump a numeric suffix until mkdir wins - the call
+    is atomic, so this is also safe across concurrent processes.
+    """
     base = base_dir or DEFAULT_RESULTS_DIR
+    base.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
-    safe_suite = re.sub(r"[^\w\-]", "_", suite_name)
-    run_dir = base / f"{safe_suite}_{ts}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir
+    safe_suite = re.sub(r"[^\w\-]", "_", suite_name) or "evals"
+    candidate = base / f"{safe_suite}_{ts}"
+    suffix = 2
+    while True:
+        try:
+            candidate.mkdir(exist_ok=False)
+        except FileExistsError:
+            candidate = base / f"{safe_suite}_{ts}-{suffix}"
+            suffix += 1
+        else:
+            return candidate
 
 
-def _write_case_file(case: EvalCaseResult, run_dir: Path) -> None:
-    """Write a markdown file for a single eval case."""
-    safe_name = re.sub(r"[^\w\-]", "_", case.case_name)
-    path = run_dir / f"{safe_name}.md"
+def _write_case_file(case: EvalCaseResult, run_dir: Path, used_stems: set[str]) -> None:
+    """Write a markdown file for a single eval case.
+
+    Distinct case names can sanitize to the same stem (``a/b`` and ``a:b``
+    both become ``a_b``), which would silently overwrite the first file.
+    Track the stems already used in this run dir and disambiguate collisions
+    with a numeric suffix so every case keeps its own file.
+    """
+    base = re.sub(r"[^\w\-]", "_", case.case_name) or "case"
+    stem = base
+    suffix = 2
+    while stem in used_stems:
+        stem = f"{base}-{suffix}"
+        suffix += 1
+    used_stems.add(stem)
+    path = run_dir / f"{stem}.md"
     path.write_text(_render_case(case), encoding="utf-8")
 
 
