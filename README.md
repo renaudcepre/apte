@@ -10,6 +10,8 @@ An eval is just a test that returns a value - scored, not asserted. Your evals g
 real fixtures, dependency injection and parallelism, and live right next to the
 tests they ship with. Python 3.10+, installs lean (Rich UI optional).
 
+![Apte demo: tests and evals in one framework](assets/demo.gif)
+
 ---
 
 ## Why Apte?
