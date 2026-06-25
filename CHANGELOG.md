@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2](https://github.com/renaudcepre/apte/compare/apte-v0.3.1...apte-v0.3.2) (2026-06-25)
+
+
+### Performance Improvements
+
+* **events:** run sync handlers inline, cache async-ness, fix soft-stop race ([#148](https://github.com/renaudcepre/apte/issues/148)) ([aedf9ff](https://github.com/renaudcepre/apte/commit/aedf9ffebb2056924c9066029b6ff05810a14bf5))
+
+
+### Documentation
+
+* add asciinema demo gif to README ([#150](https://github.com/renaudcepre/apte/issues/150)) ([ac31bdb](https://github.com/renaudcepre/apte/commit/ac31bdb9048642cc24114657ca26a339ad18c234))
+
 ## [0.3.1](https://github.com/renaudcepre/apte/compare/apte-v0.3.0...apte-v0.3.1) (2026-06-25)
 
 

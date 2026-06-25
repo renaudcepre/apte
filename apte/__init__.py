@@ -14,7 +14,7 @@ from apte.loader import LoadError, load_session
 from apte.plugin import PluginBase
 from apte.shell import CommandResult, Shell
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     "ApteError",
