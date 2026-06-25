@@ -1,5 +1,22 @@
 # JOURNAL
 
+## 2026-06-25 — ci: auto-publish reel (dispatch depuis release-please)
+
+Le trigger `release: [published]` ajoute plus tot etait inoperant : release-please
+cree la GitHub Release avec le GITHUB_TOKEN, et GitHub ne declenche aucun workflow
+sur un evenement emis par ce token (anti-recursion). 0.3.0 et 0.3.1 ont du etre
+publiees a la main.
+
+Verifie sur les sources (changelog GitHub 2022-09-08, doc PyPI, README
+release-please-action) plutot que de deviner : `workflow_dispatch` est l'EXCEPTION
+a l'anti-recursion, il declenche bien un run via GITHUB_TOKEN. Et `release_created`
+(singulier) est le bon output pour un composant racine.
+
+Fix : release-please.yml fait `gh workflow run publish.yml` quand `release_created`
+est vrai (+ permission `actions: write`). publish.yml reste le workflow d'entree
+(claim OIDC = publish.yml, config Trusted Publisher PyPI inchangee) ; son trigger
+`release:` trompeur est retire. Les prochaines releases publieront vraiment seules.
+
 ## 2026-06-25 — fix(docs): README install -> pip install apte
 
 La section Installation du README disait encore "not yet on PyPI, install from
