@@ -1,5 +1,40 @@
 # JOURNAL
 
+## 2026-06-25 — bench(perf): la claim "20-30% plus vite que pytest" ne reproduit pas
+
+Repris les benchmarks apte vs pytest pour l'article (besoin de chiffres
+prouvables). Les anciennes reecritures httpx/starlette/pydantic sont perdues
+(`_sandbox/dogfood` gitignore, sources supprimees, restent quelques .pyc
+pre-rename `protest`). Tout reconstruit dans `benchmarks/async_concurrency/`.
+
+Resultat principal, mesure : sur la vraie suite async httpx (`test_async_client`,
+26 tests localhost) pytest est 1.20x plus RAPIDE qu'apte -n8. La claim est
+inversee sur du httpx reel.
+
+Cause, isolee sur 200 tests async sans I/O : apte fait ~8.8 ms d'overhead CPU
+par test (n1), ~4 ms a n16, contre ~0.2 ms pour pytest. C'est la resolution
+DI/fixtures + scopes/tasks + events + objet resultat, pas la capture (`-s` ne
+change rien). La concurrence recouvre l'attente I/O d'un test mais pas cette
+machinerie. Donc apte ne gagne que quand l'I/O par test depasse ~10 ms ET que
+la concurrence est forte : banc Phase 1 -> 0.45x a 1ms, 1.5x a 5ms, 4.25x a
+20ms (n16, 500 tests).
+
+Pivots en cours de route : (1) approche "scenarios partages" abandonnee, le
+lead voulait un port 1:1 exact de leur suite, pas ma reecriture ; (2) port async
+client porte 1:1 et vert (26/26), mais le port integral des 1267 cas est
+inutile, la projection (1267 x 9ms) donne ~4-5x plus lent et n'apprend rien de
+plus que la loi de Phase 1.
+
+Le banc a paye : profile cProfile -> l'overhead par test = l'event bus
+(`apte/events/bus.py`) qui offload CHAQUE handler sync au threadpool via
+`run_in_threadpool` (+ les meta-events HANDLER_START/END qui triplent). ~288
+offloads/test, chacun un aller-retour socket + reveil kqueue. Fix teste
+(handlers sync inline) : overhead 9ms -> ~0.5ms/test (x15-30), et sur la vraie
+suite httpx apte passe de 1.14x plus lent a 1.11x plus RAPIDE que pytest
+(483ms vs 536ms, full process). Vrai fix = inline par defaut, offload opt-in
+pour les handlers bloquants ; merite son propre changement avec la suite apte.
+Banc + experiment dans `benchmarks/async_concurrency/`.
+
 ## 2026-06-25 — ci: auto-publish reel (dispatch depuis release-please)
 
 Le trigger `release: [published]` ajoute plus tot etait inoperant : release-please
