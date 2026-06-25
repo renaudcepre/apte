@@ -1,5 +1,15 @@
 # JOURNAL
 
+## 2026-06-25 — ci(publish): apte publie sur PyPI, trigger release cable
+
+Trusted Publisher PyPI configure (pending publisher : repo=renaudcepre/apte,
+workflow=publish.yml, environment laisse sur "Any"). apte 0.3.0 publie via
+workflow_dispatch manuel (build depuis main = 0.3.0), OIDC, sans token stocke.
+Verifie live : pypi.org/project/apte/ 200, `pip install apte` ok, nom reserve.
+
+publish.yml : bloc PARKED retire, trigger `release: [published]` ajoute (+ garde
+workflow_dispatch). Les prochaines releases release-please publieront automatiquement.
+
 ## 2026-06-24 — fix(assets): wordmark SVG protest -> apte
 
 Le rename texte n'avait pas touche les logos : le mot "protest" y est vectorise

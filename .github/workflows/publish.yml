@@ -1,28 +1,15 @@
 name: Publish to PyPI
 
 # -----------------------------------------------------------------------------
-# PARKED - manual trigger only.
-#
-# The distribution name 'apte' is available on PyPI, so the old blocker (the
-# 'protest' name was taken, PEP 541 reclaim pending) is gone. This workflow
-# stays on workflow_dispatch only until the PyPI Trusted Publisher is configured,
-# so a release never triggers a failing publish.
-#
-# To ACTIVATE once the Trusted Publisher exists:
-#   1. On PyPI, add a Trusted Publisher (or a pending publisher for the brand-new
-#      'apte' project):
-#        owner=renaudcepre, repo=<github repo>, workflow=publish.yml, environment=pypi
-#      Note: 'repo' must match the actual GitHub repo slug. The repo is still
-#      named 'protest' until renamed to 'apte'; configure the publisher with
-#      whatever the slug is at that point.
-#   2. Add the release trigger below:
-#        on:
-#          release:
-#            types: [published]   # release-please publishes the GitHub release
-#          workflow_dispatch:
+# Publishes apte to PyPI via Trusted Publishing (OIDC, no stored API token).
+# PyPI Trusted Publisher: owner=renaudcepre, repo=apte, workflow=publish.yml.
+# Fires on every published GitHub release (release-please cuts these) and can
+# also be run manually.
 # -----------------------------------------------------------------------------
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
