@@ -63,7 +63,7 @@ async def test_tokyo_is_clear(cities: Annotated[dict, Use(weather_api)]) -> None
 @api.test()
 async def test_known_cities(cities: Annotated[dict, Use(weather_api)]) -> None:
     await asyncio.sleep(0.5)
-    assert len(cities) == 3
+    assert len(cities) == 3  # noqa: PLR2004 - the weather_api fixture has 3 cities
 
 
 @api.test()
