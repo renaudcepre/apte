@@ -1,5 +1,27 @@
 # JOURNAL
 
+## 2026-06-25 — fix(interrupt): soft-stop flaky sous 3.14 apres le fix event-bus
+
+CI rouge sur la PR #144 (handlers sync inline) : un seul test casse,
+`test_soft_stop_prevents_pending_tests_from_starting`, et seulement sous Python
+3.14. Reproduit en local : stable a 3.12, ~12/40 echecs a 3.14.
+
+Course latente revelee par le fix, pas une regression de comportement.
+`_handle_signal` met `_state = SOFT_STOP` synchronement mais arme l'asyncio.Event
+`soft_stop_event` via `call_soon_threadsafe`, donc avec une iteration de boucle de
+retard. Or `_should_stop` (le gate du scheduler entre deux tests) ne lisait QUE
+l'Event. Avant le fix, `emit(TEST_END)` faisait `await run_in_threadpool` sur
+chaque handler sync : un vrai point de suspension qui rendait la main a la boucle,
+laquelle armait l'Event avant le prochain `_should_stop`. Handlers inline =
+`await emit()` ne suspend plus jamais, on atteint le gate suivant sans yield, donc
+`is_set()` encore False et le test suivant part. 3.14 change l'ordonnancement
+asyncio assez pour rendre le timing perdant la plupart du temps.
+
+Fix : `_should_stop` lit l'etat synchrone `should_stop_new_tests` (`_state !=
+RUNNING`), arme des que le handler de signal tourne, independant de la boucle.
+60/60 verts a 3.14 apres. C'est de toute facon le bon gate : un drapeau pose
+synchroniquement ne doit pas dependre d'un call_soon_threadsafe pour etre vu.
+
 ## 2026-06-25 — bench(perf): la claim "20-30% plus vite que pytest" ne reproduit pas
 
 Repris les benchmarks apte vs pytest pour l'article (besoin de chiffres
@@ -24,6 +46,15 @@ lead voulait un port 1:1 exact de leur suite, pas ma reecriture ; (2) port async
 client porte 1:1 et vert (26/26), mais le port integral des 1267 cas est
 inutile, la projection (1267 x 9ms) donne ~4-5x plus lent et n'apprend rien de
 plus que la loi de Phase 1.
+
+Suite httpx COMPLETE portee 1:1 (1285 cas, 30 fichiers, 11 agents paralleles,
+gaps documentes) apres le fix : 1268/1285 passent (comme le baseline), et apte
+-n16 fait la suite en 1.85s vs pytest ~3.0s = 1.70x plus RAPIDE. Meme apte -n1
+sequentiel est 1.4x plus rapide : la suite est majoritairement sync donc le
+gain vient de l'overhead/test divise par ~20, pas de la concurrence. La claim
+"20-30%" n'est pas juste rehabilitee, elle est depassee (+70%). Idem starlette
+porte 1:1 (505 cas, 94% sync) : apte 1.75x plus rapide (504 passed baseline).
+Deux suites reelles completes confirment.
 
 Le banc a paye : profile cProfile -> l'overhead par test = l'event bus
 (`apte/events/bus.py`) qui offload CHAQUE handler sync au threadpool via
