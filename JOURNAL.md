@@ -1,5 +1,13 @@
 # JOURNAL
 
+## 2026-06-25 — fix(docs): README install -> pip install apte
+
+La section Installation du README disait encore "not yet on PyPI, install from
+GitHub" alors que apte 0.3.0 est publie. Contradiction visible sur la page PyPI
+(le README est la description). Bascule sur `uv add apte` / `pip install apte`.
+Commit en `fix:` exprès : la description PyPI est figee a la publication, il faut
+une 0.3.1 (release-please + auto-publish) pour rafraichir la page en ligne.
+
 ## 2026-06-25 — ci: run on push to main (badge CI rouge)
 
 Badge CI rouge sur la page PyPI : pas une regression. `ci.yml` ne se declenchait
