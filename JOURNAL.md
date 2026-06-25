@@ -1,5 +1,14 @@
 # JOURNAL
 
+## 2026-06-25 — ci: run on push to main (badge CI rouge)
+
+Badge CI rouge sur la page PyPI : pas une regression. `ci.yml` ne se declenchait
+que sur `pull_request`, jamais sur push main, donc le badge fossilisait le dernier
+run push (un echec de mars 2026). Ajout du trigger `push: branches: [main]` : chaque
+merge relance la CI sur main et rafraichit le badge. Le code etait vert sur toutes
+les PRs. (Lie : les PRs release-please n'ont aucun check car les PRs du bot
+github-actions ne declenchent pas les workflows.)
+
 ## 2026-06-25 — ci(publish): apte publie sur PyPI, trigger release cable
 
 Trusted Publisher PyPI configure (pending publisher : repo=renaudcepre/apte,
