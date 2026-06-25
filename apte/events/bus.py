@@ -27,6 +27,9 @@ class _RegisteredHandler:
     func: Callable[..., Any]
     name: str
     blocking: bool = False
+    # Computed once at registration: a handler's async-ness never changes, and
+    # asyncio.iscoroutinefunction is costly (unwraps partials, inspects flags).
+    is_async: bool = False
 
 
 class EventBus:
@@ -102,7 +105,12 @@ class EventBus:
         """
         name = get_callable_name(handler)
         self._handlers[event].append(
-            _RegisteredHandler(func=handler, name=name, blocking=blocking)
+            _RegisteredHandler(
+                func=handler,
+                name=name,
+                blocking=blocking,
+                is_async=asyncio.iscoroutinefunction(handler),
+            )
         )
 
     def off(self, event: Event, handler: Callable[..., Any]) -> None:
@@ -121,7 +129,7 @@ class EventBus:
         for handler_entry in self._handlers[event]:
             handler = handler_entry.func
             handler_name = handler_entry.name
-            is_async = asyncio.iscoroutinefunction(handler)
+            is_async = handler_entry.is_async
 
             await self._emit_handler_start(handler_name, event, is_async)
             start_time = time.perf_counter()
@@ -191,10 +199,13 @@ class EventBus:
         self, name: str, event: Event, is_async: bool
     ) -> None:
         """Emit HANDLER_START without triggering handler events (avoid recursion)."""
+        listeners = self._handlers[Event.HANDLER_START]
+        if not listeners:
+            return
         info = HandlerInfo(name=name, event=event, is_async=is_async)
-        for handler_entry in self._handlers[Event.HANDLER_START]:
+        for handler_entry in listeners:
             try:
-                if asyncio.iscoroutinefunction(handler_entry.func):
+                if handler_entry.is_async:
                     await handler_entry.func(info)
                 else:
                     handler_entry.func(info)
@@ -210,12 +221,15 @@ class EventBus:
         error: Exception | None,
     ) -> None:
         """Emit HANDLER_END without triggering handler events (avoid recursion)."""
+        listeners = self._handlers[Event.HANDLER_END]
+        if not listeners:
+            return
         info = HandlerInfo(
             name=name, event=event, is_async=is_async, duration=duration, error=error
         )
-        for handler_entry in self._handlers[Event.HANDLER_END]:
+        for handler_entry in listeners:
             try:
-                if asyncio.iscoroutinefunction(handler_entry.func):
+                if handler_entry.is_async:
                     await handler_entry.func(info)
                 else:
                     handler_entry.func(info)
@@ -237,7 +251,7 @@ class EventBus:
         for handler_entry in self._handlers[event]:
             handler = handler_entry.func
             try:
-                if asyncio.iscoroutinefunction(handler):
+                if handler_entry.is_async:
                     result = await handler(data)
                 else:
                     result = handler(data)
