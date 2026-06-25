@@ -3,13 +3,15 @@ name: Publish to PyPI
 # -----------------------------------------------------------------------------
 # Publishes apte to PyPI via Trusted Publishing (OIDC, no stored API token).
 # PyPI Trusted Publisher: owner=renaudcepre, repo=apte, workflow=publish.yml.
-# Fires on every published GitHub release (release-please cuts these) and can
-# also be run manually.
+#
+# Triggered by the Release Please workflow, which dispatches this one when it cuts
+# a release. We can't use `on: release` here: release-please creates the GitHub
+# release with GITHUB_TOKEN, and events from that token don't trigger workflows
+# (recursion prevention). workflow_dispatch is exempt from that rule. Can also be
+# run manually.
 # -----------------------------------------------------------------------------
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
