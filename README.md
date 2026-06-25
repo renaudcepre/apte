@@ -118,14 +118,12 @@ apte run test_sample:session
 
 ## Installation
 
-Apte is not yet on PyPI. Install directly from GitHub:
-
 ```bash
 # With uv (recommended)
-uv add git+https://github.com/renaudcepre/apte.git
+uv add apte
 
 # With pip
-pip install git+https://github.com/renaudcepre/apte.git
+pip install apte
 ```
 
 ## CLI
