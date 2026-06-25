@@ -22,3 +22,6 @@ web/node_modules/
 /htmlcov/
 _sandbox/
 site/
+
+# Private work journal, kept local only
+JOURNAL.md
