@@ -175,8 +175,16 @@ class ParallelExecutor:
                 ctx.queue.task_done()
 
     def _should_stop(self, exitfirst_flag: asyncio.Event | None) -> bool:
-        """Check if execution should stop (interrupt or exitfirst)."""
-        return self._interrupt_handler.soft_stop_event.is_set() or (
+        """Check if execution should stop (interrupt or exitfirst).
+
+        Reads the synchronous interrupt state, not soft_stop_event: the event is
+        armed via call_soon_threadsafe (one loop iteration late), but _state is
+        set the instant the signal handler runs. Between two tests the scheduler
+        can reach this check without yielding to the loop (sync handlers run
+        inline, so emit() never suspends), so the event may still be unset while
+        a stop is already pending.
+        """
+        return self._interrupt_handler.should_stop_new_tests or (
             exitfirst_flag is not None and exitfirst_flag.is_set()
         )
 

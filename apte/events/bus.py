@@ -26,12 +26,22 @@ class _RegisteredHandler:
 
     func: Callable[..., Any]
     name: str
+    blocking: bool = False
+    # Computed once at registration: a handler's async-ness never changes, and
+    # asyncio.iscoroutinefunction is costly (unwraps partials, inspects flags).
+    is_async: bool = False
 
 
 class EventBus:
     """Decoupled event dispatch with async support.
 
-    Sync handlers are executed in a thread pool (blocking the event emission).
+    Sync handlers run inline on the event loop by default: they are expected to
+    be fast and non-blocking (reporters buffering, result collection). Inline
+    dispatch avoids a thread-pool round-trip (socket + loop wakeup) per call,
+    which otherwise dominates the per-test cost. Handlers that genuinely block
+    (heavy disk/network work) opt in with `on(..., blocking=True)` to be
+    offloaded to the thread pool instead.
+
     Async handlers run fire-and-forget and are tracked for cleanup.
 
     Use wait_pending() before session end to ensure all async handlers complete.
@@ -84,10 +94,24 @@ class EventBus:
                 else:
                     handler()
 
-    def on(self, event: Event, handler: Callable[..., Any]) -> None:
-        """Register a handler for an event."""
+    def on(
+        self, event: Event, handler: Callable[..., Any], *, blocking: bool = False
+    ) -> None:
+        """Register a handler for an event.
+
+        Sync handlers run inline by default. Pass `blocking=True` for sync
+        handlers that perform heavy blocking work and must not stall the loop;
+        those are offloaded to the thread pool.
+        """
         name = get_callable_name(handler)
-        self._handlers[event].append(_RegisteredHandler(func=handler, name=name))
+        self._handlers[event].append(
+            _RegisteredHandler(
+                func=handler,
+                name=name,
+                blocking=blocking,
+                is_async=asyncio.iscoroutinefunction(handler),
+            )
+        )
 
     def off(self, event: Event, handler: Callable[..., Any]) -> None:
         """Unregister a handler for an event."""
@@ -105,7 +129,7 @@ class EventBus:
         for handler_entry in self._handlers[event]:
             handler = handler_entry.func
             handler_name = handler_entry.name
-            is_async = asyncio.iscoroutinefunction(handler)
+            is_async = handler_entry.is_async
 
             await self._emit_handler_start(handler_name, event, is_async)
             start_time = time.perf_counter()
@@ -119,16 +143,21 @@ class EventBus:
                     )
                     self._pending_tasks.add(task)
                     task.add_done_callback(self._pending_tasks.discard)
-                else:
+                elif handler_entry.blocking:
+                    # Opt-in: offload genuinely blocking handlers to a thread,
+                    # serialized per owner to protect shared instance state.
                     lock = self._get_owner_lock(handler)
-                    if data is not None:
-                        await run_in_threadpool(
-                            self._run_sync_with_lock, lock, handler, data
-                        )
-                    else:
-                        await run_in_threadpool(
-                            self._run_sync_with_lock, lock, handler, None
-                        )
+                    await run_in_threadpool(
+                        self._run_sync_with_lock, lock, handler, data
+                    )
+                    duration = time.perf_counter() - start_time
+                    await self._emit_handler_end(
+                        handler_name, event, False, duration, None
+                    )
+                else:
+                    # Default: run inline. No thread, so no cross-thread race and
+                    # no lock needed; the call runs to completion on the loop.
+                    self._run_sync_with_lock(None, handler, data)
                     duration = time.perf_counter() - start_time
                     await self._emit_handler_end(
                         handler_name, event, False, duration, None
@@ -170,13 +199,16 @@ class EventBus:
         self, name: str, event: Event, is_async: bool
     ) -> None:
         """Emit HANDLER_START without triggering handler events (avoid recursion)."""
+        listeners = self._handlers[Event.HANDLER_START]
+        if not listeners:
+            return
         info = HandlerInfo(name=name, event=event, is_async=is_async)
-        for handler_entry in self._handlers[Event.HANDLER_START]:
+        for handler_entry in listeners:
             try:
-                if asyncio.iscoroutinefunction(handler_entry.func):
+                if handler_entry.is_async:
                     await handler_entry.func(info)
                 else:
-                    await run_in_threadpool(handler_entry.func, info)
+                    handler_entry.func(info)
             except Exception:
                 logger.exception("HANDLER_START listener %s failed", handler_entry.name)
 
@@ -189,15 +221,18 @@ class EventBus:
         error: Exception | None,
     ) -> None:
         """Emit HANDLER_END without triggering handler events (avoid recursion)."""
+        listeners = self._handlers[Event.HANDLER_END]
+        if not listeners:
+            return
         info = HandlerInfo(
             name=name, event=event, is_async=is_async, duration=duration, error=error
         )
-        for handler_entry in self._handlers[Event.HANDLER_END]:
+        for handler_entry in listeners:
             try:
-                if asyncio.iscoroutinefunction(handler_entry.func):
+                if handler_entry.is_async:
                     await handler_entry.func(info)
                 else:
-                    await run_in_threadpool(handler_entry.func, info)
+                    handler_entry.func(info)
             except Exception:
                 logger.exception("HANDLER_END listener %s failed", handler_entry.name)
 
@@ -216,10 +251,10 @@ class EventBus:
         for handler_entry in self._handlers[event]:
             handler = handler_entry.func
             try:
-                if asyncio.iscoroutinefunction(handler):
+                if handler_entry.is_async:
                     result = await handler(data)
                 else:
-                    result = await run_in_threadpool(handler, data)
+                    result = handler(data)
                 if result is not None:
                     data = result
             except Exception:
