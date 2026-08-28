@@ -1,3 +1,8 @@
+---
+title: LLM evals in Python, next to your tests
+description: Write LLM evals in Python with Apte. An eval is a test that returns a value, scored by evaluators or an LLM judge, with fixtures, concurrency and a JSONL history of runs.
+---
+
 # Evals
 
 Evaluate LLM outputs with scored metrics and historical tracking.
