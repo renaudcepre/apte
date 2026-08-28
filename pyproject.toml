@@ -56,6 +56,11 @@ output-format = "concise"
 line-length = 88
 extend-exclude = []
 
+[tool.ruff.format]
+# ruff >= 0.16 formats Python code blocks inside Markdown by default and
+# inserts PEP 8 blank lines in every doc snippet. Docs stay hand-formatted.
+exclude = ["*.md"]
+
 [tool.ruff.lint]
 select = [
     "F", # Pyflakes
