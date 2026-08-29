@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "apte"
 version = "0.3.1"
-description = "Async-first Python testing framework"
+description = "Async-first Python testing framework with explicit dependency injection and native LLM evals"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -19,6 +19,10 @@ keywords = [
     "test-framework",
     "asyncio",
     "fixtures",
+    "llm-evals",
+    "llm-evaluation",
+    "evals",
+    "pytest-alternative",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

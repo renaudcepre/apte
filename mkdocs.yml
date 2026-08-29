@@ -1,5 +1,6 @@
 site_name: Apte
-site_description: Async-first testing with explicit dependency injection
+site_url: https://renaudcepre.github.io/apte/
+site_description: Apte is an async-first Python testing framework with explicit dependency injection and native LLM evals. Tests and evals run as coroutines on one event loop.
 repo_url: https://github.com/renaudcepre/apte
 repo_name: renaudcepre/apte
 

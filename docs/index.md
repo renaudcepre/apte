@@ -1,8 +1,13 @@
+---
+title: Async-first Python testing and LLM evals
+description: Apte is a Python testing framework and LLM eval runner. Tests run as coroutines on a single event loop, with explicit dependency injection instead of fixtures resolved by name.
+---
+
 # Apte
 
-**Async-first testing with explicit dependency injection.**
+**Async-first Python testing with explicit dependency injection, and LLM evals in the same runner.**
 
-Apte is a Python testing framework designed for modern async applications. Instead of implicit fixture resolution by name, Apte requires you to explicitly declare what each test needs.
+Apte is a Python testing framework for async applications, and an alternative to pytest with pytest-asyncio when your tests are mostly I/O. Tests run as coroutines on a single event loop, so they run concurrently without separate processes. Instead of implicit fixture resolution by name, Apte requires you to explicitly declare what each test needs. LLM evals are tests that return a score instead of asserting, and they use the same fixtures and the same CLI.
 
 ## Why Apte?
 
