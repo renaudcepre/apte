@@ -27,6 +27,7 @@ from apte.evals.hashing import compute_case_hash, compute_eval_hash
 from apte.evals.types import EvalScore, TaskResult
 from apte.exceptions import (
     FixtureError,
+    MissingExpectedError,
     MultipleEvalCaseParamsError,
     NoEvaluatorsError,
     ScoreNameCollisionError,
@@ -58,15 +59,18 @@ def make_eval_wrapper(
         if case is not None and case.evaluators:
             all_evaluators.extend(case.evaluators)
 
-        # Both guards run before the task itself: the evaluator list is
-        # fully known from the kwargs alone, and the task is typically the
-        # expensive LLM call. Zero evaluators would silently pass
-        # (all([]) is True), and duplicate names guarantee colliding score
-        # keys - fail before spending any tokens on a doomed case.
+        # These guards run before the task itself: the evaluator list and
+        # the expected value are fully known from the kwargs alone, and the
+        # task is typically the expensive LLM call. Zero evaluators would
+        # silently pass (all([]) is True), duplicate names guarantee
+        # colliding score keys, and an evaluator that requires expected
+        # would raise on a case without one - fail before spending any
+        # tokens on a doomed case.
         flat_evaluators = _flatten_evaluators(all_evaluators)
         if not flat_evaluators:
             raise NoEvaluatorsError(case_name)
         _check_duplicate_evaluator_names(flat_evaluators, case_name)
+        _check_expected_available(flat_evaluators, expected, case_name)
 
         start = time.perf_counter()
         if asyncio.iscoroutinefunction(func):
@@ -220,6 +224,24 @@ def _check_duplicate_evaluator_names(
         seen.add(ev.name)
     if duplicates:
         raise ScoreNameCollisionError(case_name, duplicates)
+
+
+def _check_expected_available(
+    evaluators: list[Evaluator], expected: Any, case_name: str
+) -> None:
+    """Raise MissingExpectedError if an evaluator requires expected and it is None.
+
+    Driven by the declarative `Evaluator.requires_expected` flag, so it
+    covers built-ins and user evaluators alike. Takes the flattened list
+    (evaluators inside a ShortCircuit count too); runs before the task.
+    Only None is checked here: what counts as an "empty" expected depends
+    on its type, so that stays with each evaluator's own backstop.
+    """
+    if expected is not None:
+        return
+    needing = [ev.name for ev in evaluators if ev.requires_expected]
+    if needing:
+        raise MissingExpectedError(case_name, needing)
 
 
 def _flatten_evaluators(

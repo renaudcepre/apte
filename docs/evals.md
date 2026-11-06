@@ -385,6 +385,21 @@ to compare against, a vacuous pass (`"" in output` is always true) or a fake
 `overlap=1.0` would make a case-wiring mistake look like a healthy run. Attach
 them only to cases that carry `expected`, per-case if the case set is mixed.
 
+Both are declared `@evaluator(requires_expected=True)`, so a case with
+`expected=None` fails with `MissingExpectedError` **before the task runs**:
+a miswired `ForEach` of 50 cases costs zero LLM calls instead of 50. The same
+flag is available to your own evaluators:
+
+```python
+@evaluator(requires_expected=True)
+def exact_match(ctx: EvalContext) -> bool:
+    return ctx.output == ctx.expected_output
+```
+
+The pre-task check only covers `None`. An empty string is caught by the
+built-ins themselves, after the task, since what counts as "empty" depends
+on the type of `expected`.
+
 ## Fixtures
 
 Evals use the same fixture system as tests. Expensive setup (database, pipeline, graph) runs once and is shared across all cases.

@@ -163,6 +163,28 @@ class NoEvaluatorsError(ApteError):
         )
 
 
+class MissingExpectedError(ApteError):
+    """Raised when an evaluator that requires `expected` runs on a case without one.
+
+    Evaluators declared with `@evaluator(requires_expected=True)` (e.g. the
+    built-ins `contains_expected`, `word_overlap`) have nothing to check
+    when `EvalCase.expected` is None. The guard runs before the task: the
+    expected value and the evaluator list are both known from the kwargs,
+    and the task is typically the expensive LLM call, so a miswired case
+    set fails without spending any tokens.
+    """
+
+    def __init__(self, case_name: str, evaluator_names: list[str]):
+        names = ", ".join(repr(n) for n in evaluator_names)
+        super().__init__(
+            f"Eval '{case_name}' has no expected output, but evaluator(s) "
+            f"{names} require one. Checked before running the task, so no "
+            f"tokens were spent on this case. Set EvalCase(expected=...), or "
+            f"attach these evaluators per-case via EvalCase(evaluators=[...]) "
+            f"when only some cases carry expected."
+        )
+
+
 class ScoreNameCollisionError(ApteError):
     """Raised when two evaluators in the same eval emit scores with the same name.
 

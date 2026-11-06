@@ -65,13 +65,16 @@ def contains_keywords(
     )
 
 
-@evaluator
+@evaluator(requires_expected=True)
 def contains_expected(ctx: EvalContext[Any, str], case_sensitive: bool = False) -> bool:
     """Check that the output contains expected_output as a substring.
 
-    Requires a non-empty `expected` on the case: with None there is nothing
-    to check, and with an empty or whitespace-only string ``"" in output`` is
-    true for every output. Either way a vacuous pass would make a wiring
+    Requires a non-empty `expected` on the case (``requires_expected=True``:
+    the eval wrapper rejects a None `expected` before running the task; the
+    raises below are the backstop for direct ``run(ctx)`` calls and catch
+    the empty-string case). With None there is nothing to check, and with
+    an empty or whitespace-only string ``"" in output`` is true for every
+    output. Either way a vacuous pass would make a wiring
     mistake (case data not reaching the eval) look like a healthy run.
     """
     if ctx.expected_output is None:
@@ -165,14 +168,17 @@ def json_valid(
     return JsonValidResult(valid=True, has_required_keys=has_keys)
 
 
-@evaluator
+@evaluator(requires_expected=True)
 def word_overlap(ctx: EvalContext[Any, str]) -> WordOverlapResult:
     """Compute word overlap between output and expected_output (tracking-only).
 
-    Requires a non-empty `expected` on the case: with None there is nothing
-    to overlap with, and with an empty or whitespace-only string there are no
-    words to compare against. Either way reporting a perfect 1.0 would poison
-    the tracked metric while hiding a case-wiring mistake.
+    Requires a non-empty `expected` on the case (``requires_expected=True``:
+    the eval wrapper rejects a None `expected` before running the task; the
+    raises below are the backstop for direct ``run(ctx)`` calls and catch
+    the empty-string case). With None there is nothing to overlap with, and
+    with an empty or whitespace-only string there are no words to compare
+    against. Either way reporting a perfect 1.0 would poison the tracked
+    metric while hiding a case-wiring mistake.
     """
     if ctx.expected_output is None:
         raise ValueError(
