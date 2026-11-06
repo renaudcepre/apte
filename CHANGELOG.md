@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3](https://github.com/renaudcepre/apte/compare/apte-v0.3.2...apte-v0.3.3) (2026-11-06)
+
+
+### Features
+
+* **evals:** check requires_expected before running the task ([#160](https://github.com/renaudcepre/apte/issues/160)) ([bf52a5a](https://github.com/renaudcepre/apte/commit/bf52a5a2b361b891c11460d0e3970d493de5e50b)), closes [#127](https://github.com/renaudcepre/apte/issues/127)
+* **evals:** check requires_expected before running the task ([#162](https://github.com/renaudcepre/apte/issues/162)) ([5abbef3](https://github.com/renaudcepre/apte/commit/5abbef30e867fec4643f14a15225823c20b1f72a)), closes [#127](https://github.com/renaudcepre/apte/issues/127)
+
 ## [0.3.2](https://github.com/renaudcepre/apte/compare/apte-v0.3.1...apte-v0.3.2) (2026-08-29)
 
 
