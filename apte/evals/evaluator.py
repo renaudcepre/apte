@@ -49,6 +49,7 @@ from typing import (
     get_args,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from apte.evals.hashing import _canonical
@@ -349,21 +350,35 @@ class Evaluator:
     Splitting these avoids the "callable that does two things based on the
     type of arg[0]" anti-pattern: each method has a single, monomorphic
     signature that type checkers can read without overload gymnastics.
+
+    ``requires_expected`` declares that the evaluator has nothing to check
+    without ``EvalCase.expected``. The eval wrapper reads it before running
+    the task, so a case missing ``expected`` fails before the (typically
+    expensive) task call instead of after it.
     """
 
-    __slots__ = ("_fn", "_kwargs", "_name", "_qualname")
+    __slots__ = ("_fn", "_kwargs", "_name", "_qualname", "_requires_expected")
 
     def __init__(
-        self, fn: Callable[..., Any], kwargs: dict[str, Any] | None = None
+        self,
+        fn: Callable[..., Any],
+        kwargs: dict[str, Any] | None = None,
+        *,
+        requires_expected: bool = False,
     ) -> None:
         self._fn = fn
         self._kwargs = kwargs or {}
         self._name = fn.__name__
         self._qualname = fn.__qualname__
+        self._requires_expected = requires_expected
 
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def requires_expected(self) -> bool:
+        return self._requires_expected
 
     def score_names(self) -> list[str]:
         """Score names this evaluator emits, derived from its return annotation.
@@ -386,7 +401,11 @@ class Evaluator:
         # Re-binding form: always returns a fresh clone. Returning `self`
         # for the no-kwargs case used to make `f is f()` accidentally true,
         # which surprised users expecting `()` to behave like a constructor.
-        return Evaluator(self._fn, {**self._kwargs, **kwargs})
+        return Evaluator(
+            self._fn,
+            {**self._kwargs, **kwargs},
+            requires_expected=self._requires_expected,
+        )
 
     def run(self, ctx: EvalContext[Any, Any], /) -> Any:
         return self._fn(ctx, **self._kwargs)
@@ -404,7 +423,22 @@ class Evaluator:
         return f"Evaluator({self._name})"
 
 
-def evaluator(fn: Callable[..., Any]) -> Evaluator:
+@overload
+def evaluator(fn: Callable[..., Any], /) -> Evaluator: ...
+
+
+@overload
+def evaluator(
+    *, requires_expected: bool = False
+) -> Callable[[Callable[..., Any]], Evaluator]: ...
+
+
+def evaluator(
+    fn: Callable[..., Any] | None = None,
+    /,
+    *,
+    requires_expected: bool = False,
+) -> Evaluator | Callable[[Callable[..., Any]], Evaluator]:
     """Turn a function into a Apte evaluator.
 
     The decorator is the only sanctioned way to produce an object that
@@ -415,6 +449,18 @@ def evaluator(fn: Callable[..., Any]) -> Evaluator:
     The function must declare a return annotation of ``bool`` or a
     dataclass - the annotation is the score contract (see
     `_validate_return_annotation`).
+
+    Usable bare (``@evaluator``) or with options
+    (``@evaluator(requires_expected=True)``). ``requires_expected=True``
+    makes the eval wrapper reject a case whose ``expected`` is None before
+    the task runs, instead of discovering it only once the evaluator sees
+    the output.
     """
-    _validate_return_annotation(fn)
-    return Evaluator(fn)
+
+    def decorate(f: Callable[..., Any]) -> Evaluator:
+        _validate_return_annotation(f)
+        return Evaluator(f, requires_expected=requires_expected)
+
+    if fn is None:
+        return decorate
+    return decorate(fn)
