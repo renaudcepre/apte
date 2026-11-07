@@ -332,6 +332,10 @@ class WebReporter(PluginBase):
                         "value": entry.value,
                         "passed": entry.passed,
                         "skipped": entry.skipped,
+                        "runs": entry.runs,
+                        "minValue": entry.min_value,
+                        "maxValue": entry.max_value,
+                        "passes": entry.passes,
                     }
                     for name, entry in ep.scores.items()
                 },
@@ -343,5 +347,6 @@ class WebReporter(PluginBase):
                 "judgeInputTokens": ep.judge_input_tokens,
                 "judgeOutputTokens": ep.judge_output_tokens,
                 "judgeCost": ep.judge_cost,
+                "runs": ep.runs,
             }
         return payload

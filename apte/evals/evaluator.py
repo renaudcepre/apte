@@ -53,7 +53,7 @@ from typing import (
 )
 
 from apte.evals.hashing import _canonical
-from apte.evals.types import EvalScore
+from apte.evals.types import EvalScore, Repeat
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -156,6 +156,7 @@ class EvalCase:
     evaluators: list[Any] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    repeat: Repeat | None = None
 
     def __post_init__(self) -> None:
         if not self.name:

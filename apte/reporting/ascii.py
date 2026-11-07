@@ -75,11 +75,12 @@ def _format_eval_scores_inline(result: TestResult, short: bool = False) -> str:
             continue
         val = entry.value
         if isinstance(val, bool):
-            parts.append(f"{name}={'pass' if val else 'fail'}")
+            text = "pass" if val else "fail"
         elif isinstance(val, float):
-            parts.append(f"{name}={val:.2f}")
+            text = f"{val:.2f}"
         else:
-            parts.append(f"{name}={val}")
+            text = str(val)
+        parts.append(f"{name}={text}{entry.runs_suffix()}")
     return f" {' '.join(parts)}" if parts else ""
 
 

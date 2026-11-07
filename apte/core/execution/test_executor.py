@@ -367,5 +367,5 @@ def _build_eval_error(payload: EvalPayload) -> AssertionError:
         if entry.skipped:
             parts.append(f"{name}=⊘")
         elif not entry.passed:
-            parts.append(f"{name}={entry.value}")
+            parts.append(f"{name}={entry.value}{entry.runs_suffix()}")
     return AssertionError(f"{', '.join(parts)}")

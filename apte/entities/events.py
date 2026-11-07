@@ -10,11 +10,34 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class EvalScoreEntry:
-    """A single score entry from an evaluator."""
+    """A single score entry from an evaluator.
+
+    With ``Repeat``, one entry folds several runs: ``value`` is the mean for
+    a metric, the pass/fail outcome for a verdict, the most frequent value
+    for a reason. ``runs`` counts the runs that produced the score (runs
+    where a ShortCircuit skipped it are left out). ``min_value``/``max_value``
+    are set on metrics, ``passes`` on verdicts, only when ``runs > 1``.
+    """
 
     value: float | bool | str
     passed: bool = True
     skipped: bool = False
+    runs: int = 1
+    min_value: float | None = None
+    max_value: float | None = None
+    passes: int | None = None
+
+    def runs_suffix(self) -> str:
+        """Display suffix for a repeated score, empty for a single run.
+
+        ``[0.50-0.90]`` (min-max) for a metric, ``(4/5)`` (passes/runs) for a
+        verdict. Shared by every reporter so they agree on the format.
+        """
+        if self.min_value is not None and self.max_value is not None:
+            return f"[{self.min_value:.2f}-{self.max_value:.2f}]"
+        if self.passes is not None:
+            return f"({self.passes}/{self.runs})"
+        return ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +60,7 @@ class EvalPayload:
     judge_input_tokens: int = 0
     judge_output_tokens: int = 0
     judge_cost: float = 0.0
+    runs: int = 1
 
 
 @dataclass(frozen=True, slots=True)

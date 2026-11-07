@@ -14,6 +14,7 @@ Evaluate LLM outputs with scored metrics and historical tracking.
 - [How It Works](#how-it-works)
 - [EvalSuite](#evalsuite)
 - [EvalCase](#evalcase)
+- [Repeat (flaky cases)](#repeat-flaky-cases)
 - [Evaluators](#evaluators)
 - [Fixtures](#fixtures)
 - [ModelLabel](#modelinfo)
@@ -124,6 +125,7 @@ cases = ForEach([
 | `evaluators` | `list` | Per-case evaluators (added to suite-level ones) |
 | `tags` | `list[str]` | First-class tags - flow to `apte eval --tag …` (see below) |
 | `metadata` | `dict` | Arbitrary metadata, opaque to the framework |
+| `repeat` | `Repeat \| None` | Per-case override of the eval-level `repeat` (see [Repeat](#repeat-flaky-cases)) |
 
 ### Why `EvalCase` and not a dict?
 
@@ -147,6 +149,36 @@ EvalCase(
 apte eval evals.session:session --tag slow
 apte eval evals.session:session --no-tag slow
 ```
+
+## Repeat (flaky cases)
+
+LLM tasks are non-deterministic: one run says little. `repeat` runs the task and its evaluators several times per case, then folds the runs into one result.
+
+```python
+from apte.evals import Repeat
+
+@suite.eval(evaluators=[quality], repeat=Repeat.majority(5))
+async def chatbot(case: Annotated[EvalCase, From(cases)]) -> str:
+    return await my_agent(case.inputs)
+```
+
+| Rule | Passes when each verdict held in |
+|------|----------------------------------|
+| `Repeat.all(n)` | every run (strictest) |
+| `Repeat.majority(n)` | strictly more than half of the runs |
+| `Repeat.at_least(k, of=n)` | at least `k` runs |
+
+How runs are folded:
+
+- **Metrics**: the mean is the score (stats table, history), min and max are shown next to it: `quality.score=0.72[0.50-0.90]`.
+- **Verdicts**: pass or fail per the rule, with the count: `quality.ok=False(2/5)`. A run where a `ShortCircuit` skipped the verdict counts neither as a pass nor a fail.
+- **Reasons**: the most frequent value.
+- **Tokens and cost** are summed (what the case spent). **Duration** is the mean (per-call latency stays comparable when `n` changes).
+- **Output**: a failed case shows its first failing run, a passing case its last run.
+
+Runs are sequential, so `max_concurrency` still bounds the number of task calls in flight. The pre-task guards (no evaluators, missing `expected`) run once, before the first run.
+
+`EvalCase(repeat=...)` overrides the eval-level setting for one case. `repeat` is not part of `case_hash` or `eval_hash`: changing it does not start a new epoch. History records `"runs": n` on cases run more than once.
 
 ## Evaluators
 

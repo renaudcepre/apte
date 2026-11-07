@@ -246,6 +246,8 @@ def _serialize_eval_case(case: EvalCaseResult) -> dict[str, Any]:
     }
     if assertions:
         entry["assertions"] = assertions
+    if case.runs > 1:
+        entry["runs"] = case.runs
     return entry
 
 
