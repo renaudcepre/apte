@@ -43,6 +43,59 @@ class TaskResult(Generic[T]):
 
 
 @dataclass(frozen=True, slots=True)
+class Repeat:
+    """Run each case several times and fold the runs into one result.
+
+    LLM tasks are non-deterministic: one run says little. With ``Repeat``,
+    the task and its evaluators run ``runs`` times in sequence, then:
+
+    - each metric reports the mean, with min and max alongside;
+    - each verdict passes if it held in at least ``min_passes`` runs.
+
+    Build it with the named constructors rather than counting by hand::
+
+        Repeat.all(5)            # every run must pass (strictest)
+        Repeat.majority(5)       # 3 of 5
+        Repeat.at_least(2, of=5) # 2 of 5
+
+        @suite.eval(evaluators=[...], repeat=Repeat.majority(5))
+        async def chatbot(case: Annotated[EvalCase, From(cases)]) -> str: ...
+
+    A case can override the eval-level setting with ``EvalCase(repeat=...)``.
+    """
+
+    runs: int
+    min_passes: int
+
+    def __post_init__(self) -> None:
+        if self.runs < 1:
+            raise ValueError(f"Repeat.runs must be >= 1, got {self.runs}")
+        if not 1 <= self.min_passes <= self.runs:
+            raise ValueError(
+                f"Repeat.min_passes must be between 1 and runs ({self.runs}), "
+                f"got {self.min_passes}"
+            )
+
+    @classmethod
+    def all(cls, runs: int) -> Repeat:
+        """Every run must pass each verdict."""
+        return cls(runs=runs, min_passes=runs)
+
+    @classmethod
+    def majority(cls, runs: int) -> Repeat:
+        """Strictly more than half of the runs must pass each verdict."""
+        return cls(runs=runs, min_passes=runs // 2 + 1)
+
+    @classmethod
+    def at_least(cls, k: int, *, of: int) -> Repeat:
+        """At least ``k`` of ``of`` runs must pass each verdict."""
+        return cls(runs=of, min_passes=k)
+
+
+SINGLE_RUN = Repeat.all(1)
+
+
+@dataclass(frozen=True, slots=True)
 class JudgeResponse(Generic[T]):
     """Return type for Judge.judge() - wraps the output with optional usage stats.
 
@@ -175,6 +228,7 @@ class EvalCaseResult:
     judge_output_tokens: int = 0
     judge_cost: float = 0.0
     is_error: bool = False
+    runs: int = 1
 
     @classmethod
     def from_test_result(cls, result: TestResult) -> EvalCaseResult:
@@ -212,6 +266,7 @@ class EvalCaseResult:
             judge_output_tokens=payload.judge_output_tokens,
             judge_cost=payload.judge_cost,
             is_error=result.is_fixture_error,
+            runs=payload.runs,
         )
 
     @property

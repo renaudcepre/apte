@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import statistics
 import time
+from collections import Counter
+from dataclasses import dataclass
 from typing import Annotated, Any, get_args, get_origin
 
 from apte.di.hints import get_type_hints_compat
@@ -24,7 +27,7 @@ from apte.evals.evaluator import (
     validate_evaluators,
 )
 from apte.evals.hashing import compute_case_hash, compute_eval_hash
-from apte.evals.types import EvalScore, TaskResult
+from apte.evals.types import SINGLE_RUN, EvalScore, Repeat, TaskResult
 from apte.exceptions import (
     FixtureError,
     MissingExpectedError,
@@ -38,8 +41,14 @@ def make_eval_wrapper(
     func: Any,
     evaluators: list[Evaluator | ShortCircuit],
     judge: Any = None,
+    repeat: Repeat = SINGLE_RUN,
 ) -> Any:
-    """Wrap a function to run evaluators on its return value."""
+    """Wrap a function to run evaluators on its return value.
+
+    ``repeat`` is the eval-level default; ``EvalCase.repeat`` overrides it
+    per case. With more than one run, the runs are folded into a single
+    EvalPayload (see `_fold_scores`).
+    """
 
     # Resolve which parameter carries the EvalCase once, statically. The name
     # is then used for a direct kwargs lookup below - the case is never
@@ -54,6 +63,9 @@ def make_eval_wrapper(
         case_name = case.name if case is not None else func.__name__
         inputs = case.inputs if case is not None else None
         metadata = (case.metadata or None) if case is not None else None
+        case_repeat = (
+            case.repeat if case is not None and case.repeat is not None else repeat
+        )
 
         all_evaluators = list(evaluators)
         if case is not None and case.evaluators:
@@ -72,77 +84,208 @@ def make_eval_wrapper(
         _check_duplicate_evaluator_names(flat_evaluators, case_name)
         _check_expected_available(flat_evaluators, expected, case_name)
 
-        start = time.perf_counter()
-        if asyncio.iscoroutinefunction(func):
-            raw_output = await func(**kwargs)
-        else:
-            raw_output = func(**kwargs)
-        task_duration = time.perf_counter() - start
+        # Runs are sequential on purpose: the suite's max_concurrency bounds
+        # cases, and fanning out N task calls inside one case would bypass it.
+        runs = [
+            await _run_once(
+                func,
+                kwargs,
+                all_evaluators,
+                case_name,
+                inputs,
+                expected,
+                metadata,
+                judge,
+            )
+            for _ in range(case_repeat.runs)
+        ]
 
-        # Unwrap TaskResult if returned
-        task_input_tokens = 0
-        task_output_tokens = 0
-        task_cost = 0.0
-        if isinstance(raw_output, TaskResult):
-            output = raw_output.output
-            task_input_tokens = raw_output.input_tokens or 0
-            task_output_tokens = raw_output.output_tokens or 0
-            task_cost = raw_output.cost or 0.0
-        else:
-            output = raw_output
-
-        scores, eval_ctx = await run_evaluators(
-            all_evaluators,
-            case_name,
-            inputs,
-            output,
-            expected,
-            metadata,
-            task_duration,
-            judge=judge,
-        )
-
-        # Defense-in-depth backstop. With per-evaluator namespacing and the
-        # pre-execution name check above, no known path reaches this -
-        # distinct evaluator names can't emit the same key. Kept because
-        # EvalPayload.scores is a dict: if a future extraction path ever
-        # produces duplicate keys, silent overwrite is the worst failure.
-        seen: set[str] = set()
-        duplicates: list[str] = []
-        for s in scores:
-            if s.name in seen and s.name not in duplicates:
-                duplicates.append(s.name)
-            seen.add(s.name)
-        if duplicates:
-            raise ScoreNameCollisionError(case_name, duplicates)
+        scores = _fold_scores([run.scores for run in runs], case_repeat)
+        passed = all(entry.passed for entry in scores.values())
 
         return EvalPayload(
             case_name=case_name,
-            passed=all(s.passed for s in scores),
-            task_duration=task_duration,
+            passed=passed,
+            # Mean, not sum: duration is tracked as per-call SUT latency in
+            # history, it must stay comparable when `repeat` changes.
+            # Tokens and cost below are sums: they are what the case spent.
+            task_duration=statistics.fmean(run.duration for run in runs),
             inputs=inputs,
-            output=output,
+            output=_representative_output(runs, passed=passed),
             expected_output=expected,
-            scores={
-                s.name: EvalScoreEntry(
-                    value=s.value,
-                    passed=s.passed,
-                    skipped=s.skipped,
-                )
-                for s in scores
-            },
+            scores=scores,
             case_hash=compute_case_hash(inputs, expected),
             eval_hash=compute_eval_hash(all_evaluators),
-            task_input_tokens=task_input_tokens,
-            task_output_tokens=task_output_tokens,
-            task_cost=task_cost,
-            judge_call_count=eval_ctx.judge_call_count,
-            judge_input_tokens=eval_ctx.judge_input_tokens,
-            judge_output_tokens=eval_ctx.judge_output_tokens,
-            judge_cost=eval_ctx.judge_cost,
+            task_input_tokens=sum(run.task_input_tokens for run in runs),
+            task_output_tokens=sum(run.task_output_tokens for run in runs),
+            task_cost=sum(run.task_cost for run in runs),
+            judge_call_count=sum(run.judge_call_count for run in runs),
+            judge_input_tokens=sum(run.judge_input_tokens for run in runs),
+            judge_output_tokens=sum(run.judge_output_tokens for run in runs),
+            judge_cost=sum(run.judge_cost for run in runs),
+            runs=len(runs),
         )
 
     return eval_wrapper
+
+
+# ---------------------------------------------------------------------------
+# Single run and folding
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class _Run:
+    """Everything one task call plus its evaluators produced."""
+
+    scores: list[EvalScore]
+    output: Any
+    duration: float
+    task_input_tokens: int
+    task_output_tokens: int
+    task_cost: float
+    judge_call_count: int
+    judge_input_tokens: int
+    judge_output_tokens: int
+    judge_cost: float
+
+    @property
+    def passed(self) -> bool:
+        return all(s.passed for s in self.scores)
+
+
+async def _run_once(
+    func: Any,
+    kwargs: dict[str, Any],
+    evaluators: list[Evaluator | ShortCircuit],
+    case_name: str,
+    inputs: Any,
+    expected: Any,
+    metadata: Any,
+    judge: Any,
+) -> _Run:
+    start = time.perf_counter()
+    if asyncio.iscoroutinefunction(func):
+        raw_output = await func(**kwargs)
+    else:
+        raw_output = func(**kwargs)
+    duration = time.perf_counter() - start
+
+    # Unwrap TaskResult if returned
+    task_input_tokens = 0
+    task_output_tokens = 0
+    task_cost = 0.0
+    if isinstance(raw_output, TaskResult):
+        output = raw_output.output
+        task_input_tokens = raw_output.input_tokens or 0
+        task_output_tokens = raw_output.output_tokens or 0
+        task_cost = raw_output.cost or 0.0
+    else:
+        output = raw_output
+
+    scores, eval_ctx = await run_evaluators(
+        evaluators,
+        case_name,
+        inputs,
+        output,
+        expected,
+        metadata,
+        duration,
+        judge=judge,
+    )
+
+    # Defense-in-depth backstop. With per-evaluator namespacing and the
+    # pre-execution name check, no known path reaches this - distinct
+    # evaluator names can't emit the same key. Kept because
+    # EvalPayload.scores is a dict: if a future extraction path ever
+    # produces duplicate keys, silent overwrite is the worst failure.
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for s in scores:
+        if s.name in seen and s.name not in duplicates:
+            duplicates.append(s.name)
+        seen.add(s.name)
+    if duplicates:
+        raise ScoreNameCollisionError(case_name, duplicates)
+
+    return _Run(
+        scores=scores,
+        output=output,
+        duration=duration,
+        task_input_tokens=task_input_tokens,
+        task_output_tokens=task_output_tokens,
+        task_cost=task_cost,
+        judge_call_count=eval_ctx.judge_call_count,
+        judge_input_tokens=eval_ctx.judge_input_tokens,
+        judge_output_tokens=eval_ctx.judge_output_tokens,
+        judge_cost=eval_ctx.judge_cost,
+    )
+
+
+def _fold_scores(
+    per_run: list[list[EvalScore]], repeat: Repeat
+) -> dict[str, EvalScoreEntry]:
+    """Fold the scores of N runs into one entry per score name.
+
+    Score keys are identical across runs (namespacing is static and a
+    ShortCircuit emits skipped placeholders), so grouping by name lines the
+    runs up. Key order is the order of the first run.
+    """
+    by_name: dict[str, list[EvalScore]] = {}
+    for scores in per_run:
+        for s in scores:
+            by_name.setdefault(s.name, []).append(s)
+    return {name: _fold_score(group, repeat) for name, group in by_name.items()}
+
+
+def _fold_score(group: list[EvalScore], repeat: Repeat) -> EvalScoreEntry:
+    if len(group) == 1:
+        only = group[0]
+        return EvalScoreEntry(
+            value=only.value, passed=only.passed, skipped=only.skipped
+        )
+
+    produced = [s for s in group if not s.skipped]
+    if not produced:
+        return EvalScoreEntry(value=False, passed=True, skipped=True, runs=0)
+
+    first = produced[0]
+    if first.is_verdict:
+        passes = sum(1 for s in produced if s.value is True)
+        # A run where a ShortCircuit skipped this verdict is neither a pass
+        # nor a fail - same rule as a single run, where skipped never fails.
+        # So the budget is on failures: at most runs - min_passes.
+        fails = len(produced) - passes
+        held = fails <= repeat.runs - repeat.min_passes
+        return EvalScoreEntry(
+            value=held, passed=held, runs=len(produced), passes=passes
+        )
+
+    if first.is_metric:
+        values = [float(s.value) for s in produced]
+        return EvalScoreEntry(
+            value=statistics.fmean(values),
+            runs=len(produced),
+            min_value=min(values),
+            max_value=max(values),
+        )
+
+    # Reason / label: the most frequent value across runs.
+    label, _ = Counter(str(s.value) for s in produced).most_common(1)[0]
+    return EvalScoreEntry(value=label, runs=len(produced))
+
+
+def _representative_output(runs: list[_Run], *, passed: bool) -> Any:
+    """Pick the output shown and stored for the folded case.
+
+    A failed case shows its first failing run (the one worth debugging); a
+    passing case shows the last run.
+    """
+    if not passed:
+        for run in runs:
+            if not run.passed:
+                return run.output
+    return runs[-1].output
 
 
 # ---------------------------------------------------------------------------

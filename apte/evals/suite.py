@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from apte.core.suite import ApteSuite
 from apte.entities import SuiteKind
+from apte.evals.types import SINGLE_RUN
 from apte.evals.wrapper import make_eval_wrapper
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from apte.evals.evaluator import Evaluator, ShortCircuit
-    from apte.evals.types import Judge, ModelLabel
+    from apte.evals.types import Judge, ModelLabel, Repeat
 
 FuncT = TypeVar("FuncT", bound="Callable[..., object]")
 
@@ -70,6 +71,7 @@ class EvalSuite(ApteSuite):
         tags: list[str] | None = None,
         timeout: float | None = None,
         judge: Judge | None = None,
+        repeat: Repeat = SINGLE_RUN,
     ) -> Callable[[FuncT], FuncT]:
         """Register a scored eval test on this suite.
 
@@ -80,6 +82,8 @@ class EvalSuite(ApteSuite):
             judge: Override the suite-level judge for this eval only.
                 Useful when one eval needs a stronger model than the rest
                 of the suite. Falls back to `self.judge` when omitted.
+            repeat: Run each case several times and fold the runs, e.g.
+                `Repeat.majority(5)`. `EvalCase.repeat` overrides it per case.
         """
 
         def decorator(func: FuncT) -> FuncT:
@@ -91,6 +95,7 @@ class EvalSuite(ApteSuite):
                 func,
                 evals_list,
                 judge=resolved_judge,
+                repeat=repeat,
             )
             self.test(tags=tags, timeout=timeout, is_eval=True)(wrapper)
             return func

@@ -19,6 +19,7 @@ from apte.evals.types import (
     JudgeInfo,
     JudgeResponse,
     ModelLabel,
+    Repeat,
     ScoreStats,
     TaskResult,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "Metric",
     "ModelLabel",
     "Reason",
+    "Repeat",
     "ScoreStats",
     "ShortCircuit",
     "TaskResult",
